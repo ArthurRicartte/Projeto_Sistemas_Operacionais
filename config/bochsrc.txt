@@ -1,12 +1,5 @@
-# Configuração básica do Bochs
 megs: 32
 romimage: file=/usr/share/bochs/BIOS-bochs-latest
-vgaromimage: file=/usr/share/bochs/VGABIOS-lgpl-latest
-
-ata0-master: type=disk, path="kernel.bin", mode=flat
-
-boot: disk
-log: bochslog.txt
-mouse: enabled=0
-clock: sync=realtime
-cpu: count=1, ips=1000000
+floppya: 1_44=disk.img
+boot: a
+display_library: term

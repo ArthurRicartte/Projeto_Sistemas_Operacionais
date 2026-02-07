@@ -1,0 +1,16 @@
+A pasta Kernel e umas das mais importantes do projeto, contendo o nucleo
+do Sistema Operacional do nosso projeto;
+
+Responsavel por:
+Gerenciar CPU, memória e dispositivos de E/S;
+
+Fornecer uma interface para os programas aplicativos;
+Interface essa, que eh gerada quando executamos o Kernel,
+gerando uma tela dA QEMU;
+
+Gerenciar processos e memória;
+
+Controlar o acesso ao hardware;
+
+A estrutura inicial do Kernel 
+(ate o momento do ultimo commit, foi feita por Arthur Ricartte);

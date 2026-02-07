@@ -1,5 +1,11 @@
-megs: 32
-romimage: file=/usr/share/bochs/BIOS-bochs-latest
-floppya: 1_44=disk.img
-boot: a
-display_library: term
+megs: 32 //Quantidade de memoria RAM da maquina virtual
+romimage: file=/usr/share/bochs/BIOS-bochs-latest //Especifica o arquivo da bios que o bochs usa
+floppya: 1_44=disk.img //Configura o drive de disquete
+boot: a //Qual dispositivo deve inicializar
+display_library: term //Define a interface do Bochs como terminal/sem graficos
+
+O Bochs consiste em um emulador de pc usado para desenvolver
+Sistemas Operacionais;
+
+O nosso projeto suporta usar QEMU tambem;
+

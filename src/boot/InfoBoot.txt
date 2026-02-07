@@ -1,0 +1,13 @@
+O Bootloader eh o primeiro codigo que executa;
+
+Carrega o kernel, trazando o Sistema Operacional do
+disco para a RAM;
+
+Verifica se esta tudo ok;
+
+Entrega Controle da CPU ao kernel;
+
+"Morre" apos realizar as tarefas acima;
+
+A estrutura inicial do Bootloader 
+(ate o momento do ultimo commit, foi feita por Arthur Ricartte);

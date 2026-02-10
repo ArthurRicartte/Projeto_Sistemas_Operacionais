@@ -1,24 +1,19 @@
-global loader                   ; o símbolo de entrada para o ELF
-extern kmain                    ; a função definida no C
-
-MAGIC_NUMBER equ 0x1BADB002     ; constante magica do multiboot
-FLAGS        equ 0x0            ; flags
-CHECKSUM     equ -MAGIC_NUMBER  ; soma de verificação
-KERNEL_STACK_SIZE equ 4096      ; tamanho da pilha (4KB)
+;Desenvolvido por: Arthur Ricartte e Joao Veloso (Ultima Atualizacao: 10-02-2026)
+bits 32
+global loader
+extern kmain
 
 section .text
-align 4
-    dd MAGIC_NUMBER
-    dd FLAGS
-    dd CHECKSUM
-
 loader:
-    mov esp, kernel_stack + KERNEL_STACK_SIZE   ; aponta ESP para o topo da pilha
-    call kmain                                  ; chama a função C
-.loop:
-    jmp .loop                                   ; loop infinito se kmain retornar
+    ;A pilha já foi configurada pelo bootloader (esp = 0x9000)
+    
+    ;Chamar o kernel principal em C
+    call kmain
+    
+    ;Se kmain retornar (não deveria), loop infinito
+.halt:
+    hlt
+    jmp .halt
 
 section .bss
-align 4
-kernel_stack:
-    resb KERNEL_STACK_SIZE                      ; reserva memória para a pilha
+;Pilha opcional, já que o bootloader configurou

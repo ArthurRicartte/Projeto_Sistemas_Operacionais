@@ -1,3 +1,5 @@
+#MakeFile serve para definir a compilacao, linkagem e empacotar o SO
+#Desenvolvido por: Arthur Ricartte e Joao Veloso (Ultima atualizacao: 10-02-2026)
 # --- ferramentas ---
 CC = gcc
 AS = nasm
@@ -6,62 +8,51 @@ LD = ld
 # --- flags ---
 CFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
          -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c
-ASFLAGS = -f elf
+ASFLAGS_BOOT = -f bin
+ASFLAGS_LOADER = -f elf32
 LDFLAGS = -T linker.ld -m elf_i386
 
 # --- arquivos ---
 OBJECTS = loader.o kmain.o
 
 # --- ALVO PRINCIPAL ---
-all: os.iso
+all: disk.img
 
-# compila o Assembly (Loader)
+# Bootloader (binário plano, setor de boot):
+boot.bin: src/boot/boot.asm
+	$(AS) $(ASFLAGS_BOOT) src/boot/boot.asm -o boot.bin
+
+# Loader (modo protegido):
 loader.o: src/boot/loader.s
-	$(AS) $(ASFLAGS) src/boot/loader.s -o loader.o
+	$(AS) $(ASFLAGS_LOADER) src/boot/loader.s -o loader.o
 
-# compila o C (Kernel)
+# Kernel em C:
 kmain.o: src/kernel/kmain.c
 	$(CC) $(CFLAGS) src/kernel/kmain.c -o kmain.o
 
-# linkagem (Gera o executável ELF)
+# Linkar tudo em ELF:
 kernel.elf: $(OBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o kernel.elf
 
-# criação da ISO
-os.iso: kernel.elf
-	@echo "--- criando estrutura da ISO ---"
-	mkdir -p iso/boot/grub
-	cp kernel.elf iso/boot/kernel.elf
-	
-	@echo "--- criando menu do GRUB ---"
-	echo 'default=0' > iso/boot/grub/menu.lst
-	echo 'timeout=0' >> iso/boot/grub/menu.lst
-	echo 'title OS' >> iso/boot/grub/menu.lst
-	echo 'kernel /boot/kernel.elf' >> iso/boot/grub/menu.lst
-	
-	@echo "--- verificando stage2_eltorito ---"
-	@if [ ! -f iso/boot/grub/stage2_eltorito ]; then \
-		echo "baixando stage2_eltorito..."; \
-		wget -q https://github.com/littleosbook/littleosbook/raw/master/files/stage2_eltorito -O iso/boot/grub/stage2_eltorito; \
-	fi
-	
-	@echo "--- gerando a imagem ISO ---"
-	genisoimage -R                              \
-                -b boot/grub/stage2_eltorito    \
-                -no-emul-boot                   \
-                -boot-load-size 4               \
-                -A os                           \
-                -input-charset utf8             \
-                -quiet                          \
-                -boot-info-table                \
-                -o os.iso                       \
-                iso
+# Converter ELF para binário bruto:
+kernel.bin: kernel.elf
+	objcopy -O binary kernel.elf kernel.bin
 
-# --- INTERFACE DE EXECUÇÃO ---
-run: all
-	@echo "--- iniciando Bochs com CD-ROM ---"
-	sudo bochs -q 'romimage: file=/usr/share/seabios/bios.bin' 'vgaromimage: file=/usr/share/seabios/vgabios.bin' 'boot: cdrom' 'ata0-master: type=cdrom, path="os.iso", status=inserted'
+# Criar imagem de disco:
+disk.img: boot.bin kernel.bin
+	dd if=/dev/zero of=disk.img bs=512 count=2880  # Disquete 1.44MB
+	dd if=boot.bin of=disk.img conv=notrunc        # Setor de boot
+	dd if=kernel.bin of=disk.img bs=512 seek=1 conv=notrunc  # Setor 2+
 
-# --- LIMPEZA ---
+# Executar com QEMU:
+run: disk.img
+	qemu-system-i386 -fda disk.img -boot a
+
+# Limpar:
 clean:
-	rm -rf *.o *.elf *.iso iso
+	rm -rf *.o *.bin *.elf disk.img
+
+# Depurar com GDB:
+debug: disk.img
+	qemu-system-i386 -s -S -fda disk.img &
+	gdb -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"

@@ -1,4 +1,4 @@
-default=0
-timeout=0
-title OS
-kernel /boot/kernel.elf
+default=0 //Define qual entrada do menu eh a padrao -> primeira (0), segunda (1)...
+timeout=0 //Define o tempo, em segundos, de exibicao do menu GRUB -> zero significa que nao mostra
+title OS //Define um titulo para a entrada do boot, no nosso caso eh "OS"
+kernel /boot/kernel.elf //Caminho para executar o Kernle.elf

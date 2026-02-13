@@ -1,5 +1,0 @@
-megs: 32
-romimage: file=/usr/share/bochs/BIOS-bochs-latest
-floppya: 1_44=disk.img
-boot: a
-display_library: term

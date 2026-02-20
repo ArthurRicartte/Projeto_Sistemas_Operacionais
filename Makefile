@@ -1,21 +1,20 @@
-# Makefile – Projeto Sistemas Operacionais (Unidade 4)
-# Desenvolvido por: Arthur Ricartte e Joao Veloso
+# Desenvolvido por: Arthur Ricartte e Joao Veloso - Ultima atualizacao: 20/02/2026
 
 # Ferramentas
 CC = gcc
 AS = nasm
 LD = ld
 
-# Flags
+# Flags de compilação e linkagem
 CFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
          -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c
 ASFLAGS_BOOT = -f bin
 ASFLAGS_LOADER = -f elf32
 LDFLAGS = -T config/linker.ld -m elf_i386
 
-# Arquivos objeto
+# Arquivos objeto (Adicionados gdt_c.o e gdt_s.o para o Cap 5)
 LOADER_OBJ = loader.o
-KERNEL_OBJS = kmain.o fb.o serial.o io.o
+KERNEL_OBJS = kmain.o fb.o serial.o io.o gdt_c.o gdt_s.o
 OBJECTS = $(LOADER_OBJ) $(KERNEL_OBJS)
 
 # Alvo padrão
@@ -33,8 +32,16 @@ loader.o: src/boot/loader.s
 io.o: src/io.s
 	$(AS) $(ASFLAGS_LOADER) src/io.s -o io.o
 
+# --- Regras para a GDT (Capítulo 5) ---
+gdt_s.o: src/kernel/gdt.s
+	$(AS) $(ASFLAGS_LOADER) src/kernel/gdt.s -o gdt_s.o
+
+gdt_c.o: src/kernel/gdt.c src/kernel/gdt.h
+	$(CC) $(CFLAGS) src/kernel/gdt.c -o gdt_c.o
+# --------------------------------------
+
 # Kernel C
-kmain.o: src/kernel/kmain.c
+kmain.o: src/kernel/kmain.c src/kernel/gdt.h
 	$(CC) $(CFLAGS) src/kernel/kmain.c -o kmain.o
 
 fb.o: src/kernel/fb.c src/kernel/fb.h src/kernel/io.h
@@ -61,7 +68,7 @@ disk.img: boot.bin kernel.bin
 run: disk.img
 	qemu-system-i386 -fda disk.img -boot a -serial file:com1.out
 
-# Depuração
+# Depuração com GDB
 debug: disk.img
 	qemu-system-i386 -s -S -fda disk.img -serial file:com1.out &
 	gdb -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"

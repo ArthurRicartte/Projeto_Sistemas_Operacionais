@@ -33,8 +33,8 @@ io.o: src/io.s
 	$(AS) $(ASFLAGS_LOADER) src/io.s -o io.o
 
 # --- Regras para a GDT (Capítulo 5) ---
-gdt_s.o: src/kernel/gdt.s
-	$(AS) $(ASFLAGS_LOADER) src/kernel/gdt.s -o gdt_s.o
+gdt_s.o: src/gdt.s
+	$(AS) $(ASFLAGS_LOADER) src/gdt.s -o gdt_s.o
 
 gdt_c.o: src/kernel/gdt.c src/kernel/gdt.h
 	$(CC) $(CFLAGS) src/kernel/gdt.c -o gdt_c.o

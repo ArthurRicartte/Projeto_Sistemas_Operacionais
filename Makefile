@@ -14,7 +14,7 @@ LDFLAGS = -T config/linker.ld -m elf_i386
 
 # Arquivos objeto (Adicionados gdt_c.o e gdt_s.o para o Cap 5)
 LOADER_OBJ = loader.o
-KERNEL_OBJS = kmain.o fb.o serial.o io.o gdt_c.o gdt_s.o
+KERNEL_OBJS =  kmain.o fb.o serial.o io.o gdt_c.o gdt_s.o idt.o pic.o interrupts.o
 OBJECTS = $(LOADER_OBJ) $(KERNEL_OBJS)
 
 # Alvo padrão
@@ -50,6 +50,16 @@ fb.o: src/kernel/fb.c src/kernel/fb.h src/kernel/io.h
 serial.o: src/kernel/serial.c src/kernel/serial.h src/kernel/io.h
 	$(CC) $(CFLAGS) src/kernel/serial.c -o serial.o
 
+# --- NOVAS REGRAS PARA INTERRUPÇÕES ---
+interrupts.o: src/interrupts.s
+	$(AS) $(ASFLAGS_LOADER) src/interrupts.s -o interrupts.o
+
+pic.o: src/kernel/pic.c src/kernel/pic.h src/kernel/io.h
+	$(CC) $(CFLAGS) src/kernel/pic.c -o pic.o
+
+idt.o: src/kernel/idt.c src/kernel/idt.h src/kernel/pic.h
+	$(CC) $(CFLAGS) src/kernel/idt.c -o idt.o
+	
 # Linkagem
 kernel.elf: $(OBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o kernel.elf

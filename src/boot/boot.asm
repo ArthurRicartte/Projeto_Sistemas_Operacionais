@@ -22,7 +22,7 @@ start:
 
     ;Carregar mais setores para o kernel (pelo menos 10)
     mov ah, 0x02      ; Função de leitura
-    mov al, 10        ; Número de setores (ajuste conforme necessário)
+    mov al, 50        ; lê 50 setores (25600 bytes)
     mov ch, 0         ; Cilindro 0
     mov dh, 0         ; Cabeça 0
     mov cl, 2         ; Setor 2 (após o bootloader)

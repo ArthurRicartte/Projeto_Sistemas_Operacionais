@@ -1,6 +1,3 @@
-; interrupts.s - Stubs de interrupção e handler comum
-; Baseado no Little OS Book
-
 global load_idt
 global common_interrupt_handler
 global interrupt_handlers

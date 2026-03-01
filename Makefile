@@ -14,7 +14,7 @@ LDFLAGS = -T config/linker.ld -m elf_i386
 
 # Arquivos objeto (Adicionados gdt_c.o e gdt_s.o para o Cap 5)
 LOADER_OBJ = loader.o
-// novos objetos: idt.o , pic.o , interrupts.o
+# novos objetos: idt.o , pic.o , interrupts.o
 KERNEL_OBJS =  kmain.o fb.o serial.o io.o gdt_c.o gdt_s.o idt.o pic.o interrupts.o 
 
 OBJECTS = $(LOADER_OBJ) $(KERNEL_OBJS)

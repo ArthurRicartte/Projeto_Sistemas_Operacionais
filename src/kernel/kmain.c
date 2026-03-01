@@ -51,13 +51,13 @@ void kmain(void)
 
     // Inicializa a IDT e o PIC
     fb_write("Inicializando IDT...\n", 21);
-    init_idt();
+    init_idt();  // inicializa tabela de interrupcoes
 
     fb_write("Configurando PIC...\n", 20);
-    init_pic();
+    init_pic(); //  configura o controlador de interrupcoes
 
     fb_write("Habilitando interrupcoes...\n", 28);
-    __asm__ volatile("sti"); // habilita interrupcoes
+    __asm__ volatile("sti"); // habilita interrupcoes na CPU
 
     fb_write("Interrupcoes habilitadas. Digite algo no teclado...\n", 52);
     while (1)

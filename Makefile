@@ -50,7 +50,7 @@ fb.o: src/kernel/fb.c src/kernel/fb.h src/kernel/io.h
 serial.o: src/kernel/serial.c src/kernel/serial.h src/kernel/io.h
 	$(CC) $(CFLAGS) src/kernel/serial.c -o serial.o
 
-# --- NOVAS REGRAS PARA INTERRUPÇÕES ---
+# --- NOVAS REGRAS PARA INTERRUPCOES ---
 interrupts.o: src/interrupts.s
 	$(AS) $(ASFLAGS_LOADER) src/interrupts.s -o interrupts.o
 

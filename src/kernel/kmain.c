@@ -1,30 +1,67 @@
-// Nucleo do Sistema Operacional
-// Desenvolvido por: Arthur Ricartte e Joao Veloso (Ultima Atualizacao: 10-02-2026)
+// Nucleo do Sistema Operacional – Unidade 4
+// Desenvolvido por: Arthur Ricartte - ultima atualizacao (20/02/2026)
+#include "fb.h"
+#include "serial.h"
+#include "gdt.h" // Adicionado para o Capítulo 5
+#include "idt.h" //Adicionado para o Capítulo 6
+#include "pic.h" //Adicionado para o Capítulo 6
+
+// Função de delay simples (busy wait)
+// Quanto maior o valor, maior a pausa.
+static void sleep(unsigned int timer)
+{
+    for (volatile unsigned int i = 0; i < timer; i++)
+    {
+        // O loop vazio, mas "volatile" impede que o compilador otimize
+    }
+}
+
 void kmain(void)
 {
-    // Acesso direto à memória de vídeo:
-    volatile char *video = (volatile char *)0xB8000;
+    // Inicializa a GDT antes de qualquer outra coisa
+    init_gdt();
 
-    // Limpar tela:
-    for (int i = 0; i < 80 * 25 * 2; i += 2)
+    // Inicializa o framebuffer
+    fb_clear();
+
+    // Inicializa a porta serial COM1
+    serial_configure(SERIAL_COM1);
+
+    // Escreve mensagens no framebuffer
+    fb_write("GDT Inicializada!\n", 18);
+    fb_write("Kernel em Modo Protegido Funcionando!\n", 37);
+    sleep(10000000);
+
+    fb_write("Driver de framebuffer ativo.\n", 30);
+    sleep(10000000);
+
+    fb_write("Testando rolagem...\n", 20);
+    sleep(10000000);
+
+    // Força rolagem (escreve 30 linhas)
+    for (int i = 0; i < 30; i++)
     {
-        video[i] = ' ';
-        video[i + 1] = 0x07; // Cinza claro
+        fb_write("Linha de teste para rolagem.\n", 29);
+        sleep(5000000); // pausa menor entre linhas para ver a rolagem
     }
 
-    // Escrever mensagem:
-    const char *msg = "Kernel em Modo Protegido Funcionando!";
-    int offset = 80 * 2; // Segunda linha
+    // Escreve na porta serial (sera capturada no arquivo com1.out)
+    serial_write(SERIAL_COM1, "Hello from serial port!\n", 24);
+    serial_write(SERIAL_COM1, "Isso vai para o arquivo com1.out\n", 34);
 
-    for (int i = 0; msg[i] != '\0'; i++)
-    {
-        video[offset + i * 2] = msg[i];
-        video[offset + i * 2 + 1] = 0x0A; // Verde claro
-    }
+    // Inicializa a IDT e o PIC
+    fb_write("Inicializando IDT...\n", 21);
+    init_idt();  // inicializa tabela de interrupcoes
 
-    // Loop infinito:
+    fb_write("Configurando PIC...\n", 20);
+    init_pic(); //  configura o controlador de interrupcoes
+
+    fb_write("Habilitando interrupcoes...\n", 28);
+    __asm__ volatile("sti"); // habilita interrupcoes na CPU
+
+    fb_write("Interrupcoes habilitadas. Digite algo no teclado...\n", 52);
     while (1)
     {
-        // Por enquando vou deixar vazio!
+        // Loop infinito
     }
 }

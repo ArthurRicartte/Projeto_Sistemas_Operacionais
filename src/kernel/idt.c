@@ -80,13 +80,23 @@ void interrupt_handler(struct cpu_state *cpu, struct stack_state *stack, unsigne
         if (interrupt == 33)
         { // IRQ1 (teclado)
             unsigned char scancode = inb(0x60);
-            char ascii = scan_code_to_ascii(scancode);
-            if (ascii)
+
+            if (scancode == 0x0E) // backspace pressionado
             {
-                char str[2] = {ascii, '\0'};
-                fb_write(str, 1);
-                serial_write(SERIAL_COM1, str, 1);
+                fb_delete_char();
+                serial_write(SERIAL_COM1, "\b", 1); // opcional: envia backspace para a serial
             }
+            else if (!(scancode & 0x80)) // apenas tecla pressionada (não liberada)
+            {
+                char ascii = scan_code_to_ascii(scancode);
+                if (ascii)
+                {
+                    char str[2] = {ascii, '\0'};
+                    fb_write(str, 1);
+                    serial_write(SERIAL_COM1, str, 1);
+                }
+            }
+
             pic_acknowledge(interrupt);
         }
         else if (interrupt == 32)

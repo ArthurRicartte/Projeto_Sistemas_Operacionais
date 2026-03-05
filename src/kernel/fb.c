@@ -109,3 +109,27 @@ void fb_clear(void)
     cursor_pos = 0;
     fb_move_cursor(0);
 }
+
+// Retorna a posicao atual do cursor
+unsigned short fb_get_cursor(void)
+{
+    return cursor_pos;
+}
+
+// Define a posicao do cursor
+void fb_set_cursor(unsigned short pos)
+{
+    cursor_pos = pos;
+    fb_move_cursor(pos);
+}
+
+// Deleta o caractere anterior ao cursor (backspace)
+void fb_delete_char(void)
+{
+    if (cursor_pos > 0)
+    {
+        cursor_pos--;
+        fb_write_cell(cursor_pos, ' ', FB_WHITE, FB_BLACK);
+        fb_move_cursor(cursor_pos);
+    }
+}

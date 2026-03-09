@@ -1,49 +1,37 @@
-# Desenvolvido por: Arthur Ricartte e Joao Veloso - Ultima atualizacao: 20/02/2026
+# Desenvolvido por: Arthur Ricartte e Joao Veloso - Adaptado para GRUB
+# Ultima atualizacao: 09/03/2026
 
 # Ferramentas
 CC = gcc
 AS = nasm
 LD = ld
+GRUB_MKRESCUE = grub-mkrescue
 
 # Flags de compilação e linkagem
 CFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
          -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c
-ASFLAGS_BOOT = -f bin
-ASFLAGS_LOADER = -f elf32
+ASFLAGS_ELF = -f elf32
+ASFLAGS_BIN = -f bin
 LDFLAGS = -T config/linker.ld -m elf_i386
 
-# Arquivos objeto (Adicionados gdt_c.o e gdt_s.o para o Cap 5)
+# Arquivos objeto do kernel
 LOADER_OBJ = loader.o
-# novos objetos: idt.o , pic.o , interrupts.o
-KERNEL_OBJS =  kmain.o fb.o serial.o io.o gdt_c.o gdt_s.o idt.o pic.o interrupts.o 
-
+KERNEL_OBJS = kmain.o fb.o serial.o io.o gdt_c.o gdt_s.o idt.o pic.o interrupts.o
 OBJECTS = $(LOADER_OBJ) $(KERNEL_OBJS)
 
+# Programa do usuário (módulo)
+PROGRAM_SRC = src/program.s
+PROGRAM_BIN = program.bin
+
 # Alvo padrão
-all: disk.img
+all: os.iso
 
-# Bootloader (binário)
-boot.bin: src/boot/boot.asm
-	$(AS) $(ASFLAGS_BOOT) src/boot/boot.asm -o boot.bin
-
-# Loader (modo protegido)
+# Compila o loader (assembly)
 loader.o: src/boot/loader.s
-	$(AS) $(ASFLAGS_LOADER) src/boot/loader.s -o loader.o
+	$(AS) $(ASFLAGS_ELF) src/boot/loader.s -o loader.o
 
-# io.s (assembly de E/S)
-io.o: src/io.s
-	$(AS) $(ASFLAGS_LOADER) src/io.s -o io.o
-
-# --- Regras para a GDT (Capítulo 5) ---
-gdt_s.o: src/gdt.s
-	$(AS) $(ASFLAGS_LOADER) src/gdt.s -o gdt_s.o
-
-gdt_c.o: src/kernel/gdt.c src/kernel/gdt.h
-	$(CC) $(CFLAGS) src/kernel/gdt.c -o gdt_c.o
-# --------------------------------------
-
-# Kernel C
-kmain.o: src/kernel/kmain.c src/kernel/gdt.h
+# Compila os arquivos C
+kmain.o: src/kernel/kmain.c src/kernel/gdt.h src/kernel/multiboot.h
 	$(CC) $(CFLAGS) src/kernel/kmain.c -o kmain.o
 
 fb.o: src/kernel/fb.c src/kernel/fb.h src/kernel/io.h
@@ -52,39 +40,61 @@ fb.o: src/kernel/fb.c src/kernel/fb.h src/kernel/io.h
 serial.o: src/kernel/serial.c src/kernel/serial.h src/kernel/io.h
 	$(CC) $(CFLAGS) src/kernel/serial.c -o serial.o
 
-# --- NOVAS REGRAS PARA INTERRUPCOES ---
+io.o: src/io.s
+	$(AS) $(ASFLAGS_ELF) src/io.s -o io.o
+
+gdt_s.o: src/gdt.s
+	$(AS) $(ASFLAGS_ELF) src/gdt.s -o gdt_s.o
+
+gdt_c.o: src/kernel/gdt.c src/kernel/gdt.h
+	$(CC) $(CFLAGS) src/kernel/gdt.c -o gdt_c.o
+
 interrupts.o: src/interrupts.s
-	$(AS) $(ASFLAGS_LOADER) src/interrupts.s -o interrupts.o
+	$(AS) $(ASFLAGS_ELF) src/interrupts.s -o interrupts.o
 
 pic.o: src/kernel/pic.c src/kernel/pic.h src/kernel/io.h
 	$(CC) $(CFLAGS) src/kernel/pic.c -o pic.o
 
 idt.o: src/kernel/idt.c src/kernel/idt.h src/kernel/pic.h
 	$(CC) $(CFLAGS) src/kernel/idt.c -o idt.o
-	
-# Linkagem
+
+# Linkagem do kernel ELF
 kernel.elf: $(OBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o kernel.elf
 
-# Converter ELF para binário
-kernel.bin: kernel.elf
-	objcopy -O binary kernel.elf kernel.bin
+# Compila o programa do usuário para binário puro
+$(PROGRAM_BIN): $(PROGRAM_SRC)
+	$(AS) $(ASFLAGS_BIN) $(PROGRAM_SRC) -o $(PROGRAM_BIN)
 
-# Imagem de disco
-disk.img: boot.bin kernel.bin
-	dd if=/dev/zero of=disk.img bs=512 count=2880
-	dd if=boot.bin of=disk.img conv=notrunc
-	dd if=kernel.bin of=disk.img bs=512 seek=1 conv=notrunc
+# Prepara a estrutura de diretórios para a ISO
+iso/:
+	mkdir -p iso/boot/grub
+	mkdir -p iso/modules
 
-# Executar no QEMU com redirecionamento serial
-run: disk.img
-	qemu-system-i386 -fda disk.img -boot a -serial file:com1.out
+# Copia o kernel e o módulo para a ISO
+iso/boot/kernel.elf: kernel.elf | iso/
+	cp kernel.elf iso/boot/
+
+iso/modules/$(PROGRAM_BIN): $(PROGRAM_BIN) | iso/
+	cp $(PROGRAM_BIN) iso/modules/
+
+# Copia o arquivo de configuração do GRUB
+iso/boot/grub/grub.cfg: src/boot/grub.cfg | iso/
+	cp src/boot/grub.cfg iso/boot/grub/
+
+# Gera a ISO usando grub-mkrescue
+os.iso: iso/boot/kernel.elf iso/modules/$(PROGRAM_BIN) iso/boot/grub/grub.cfg
+	$(GRUB_MKRESCUE) -o os.iso iso/
+
+# Executa no QEMU
+run: os.iso
+	qemu-system-i386 -cdrom os.iso -serial file:com1.out
 
 # Depuração com GDB
-debug: disk.img
-	qemu-system-i386 -s -S -fda disk.img -serial file:com1.out &
+debug: os.iso
+	qemu-system-i386 -s -S -cdrom os.iso -serial file:com1.out &
 	gdb -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
 # Limpeza
 clean:
-	rm -rf *.o *.bin *.elf disk.img com1.out
+	rm -rf *.o *.bin *.elf os.iso iso/ com1.out

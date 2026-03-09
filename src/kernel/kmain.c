@@ -1,10 +1,13 @@
 // Nucleo do Sistema Operacional – Unidade 4
 // Desenvolvido por: Arthur Ricartte - ultima atualizacao (20/02/2026)
+// Modificado para Capítulo 7 - Carregamento de módulos (06/03/2026)
+
 #include "fb.h"
 #include "serial.h"
 #include "gdt.h" // Adicionado para o Capítulo 5
 #include "idt.h" //Adicionado para o Capítulo 6
 #include "pic.h" //Adicionado para o Capítulo 6
+#include "multiboot.h" // NOVO: Para o Capítulo 7
 
 // Função de delay simples (busy wait)
 // Quanto maior o valor, maior a pausa.
@@ -16,7 +19,30 @@ static void sleep(unsigned int timer)
     }
 }
 
-void kmain(void)
+// =====================================================================
+// NOVO: Função auxiliar para converter números para hexadecimal
+// =====================================================================
+static void write_hex(unsigned int num)
+{
+    char hex_chars[] = "0123456789ABCDEF";
+    char buffer[11]; // "0xFFFFFFFF" + '\0'
+    
+    buffer[0] = '0';
+    buffer[1] = 'x';
+    buffer[10] = '\0';
+    
+    for(int i = 0; i < 8; i++) {
+        unsigned char nibble = (num >> (28 - i*4)) & 0xF;
+        buffer[2 + i] = hex_chars[nibble];
+    }
+    
+    fb_write(buffer, 10);
+}
+
+// =====================================================================
+// FUNÇÃO PRINCIPAL MODIFICADA - AGORA RECEBE EBX
+// =====================================================================
+void kmain(unsigned int ebx)  // <--- MUDANÇA: parâmetro adicionado
 {
     // Inicializa a GDT antes de qualquer outra coisa
     init_gdt();
@@ -60,8 +86,59 @@ void kmain(void)
     __asm__ volatile("sti"); // habilita interrupcoes na CPU
 
     fb_write("Interrupcoes habilitadas. Digite algo no teclado...\n", 52);
+    
+    // =================================================================
+    // NOVO: Código do Capítulo 7 - Carregar e executar módulo
+    // =================================================================
+    fb_write("\n[Capítulo 7] Procurando módulos do GRUB...\n", 41);
+    
+    // Converter ebx para a estrutura multiboot
+    multiboot_info_t *mbinfo = (multiboot_info_t *) ebx;
+    
+    // Verificar se módulos foram carregados (bit 3 das flags)
+    if (mbinfo->flags & MULTIBOOT_INFO_MODS) {
+        fb_write("Módulos detectados! Flags ok.\n", 30);
+        
+        if (mbinfo->mods_count > 0) {
+            fb_write("Número de módulos: ", 19);
+            
+            // Mostrar contagem (convertendo para caractere)
+            char count_str[2];
+            count_str[0] = '0' + mbinfo->mods_count;
+            count_str[1] = '\n';
+            fb_write(count_str, 2);
+            
+            // Pegar endereço do primeiro módulo
+            multiboot_module_t *mod = (multiboot_module_t *) mbinfo->mods_addr;
+            unsigned int module_address = mod->mod_start;
+            
+            fb_write("Endereco do modulo: ", 20);
+            write_hex(module_address);
+            fb_write("\n", 1);
+            
+            fb_write("Executando modulo...\n", 21);
+            
+            // Executar o módulo
+            void (*program)(void) = (void (*)(void)) module_address;
+            program();
+            
+            // Se chegar aqui, o módulo retornou (não deveria)
+            fb_write("ERRO: Modulo retornou!\n", 22);
+        } else {
+            fb_write("ERRO: mods_count = 0\n", 21);
+        }
+    } else {
+        fb_write("ERRO: Nenhum modulo carregado!\n", 30);
+        fb_write("Verifique menu.lst e pasta modules/\n", 36);
+    }
+    
+    fb_write("Fim do Capitulo 7. Loop infinito...\n", 36);
+    
+    // =================================================================
+    // Loop infinito original (preservado)
+    // =================================================================
     while (1)
     {
-        // Loop infinito
+        __asm__ volatile("hlt"); // Halt instruction to save power
     }
 }

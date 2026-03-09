@@ -8,7 +8,7 @@ OUTPUT_FORMAT(elf32-i386)
 SECTIONS
 {
     /* O kernel é carregado em 0x1000 (1KB) */
-    . = 0x1000;
+    . = 0x00100000;
 
     .text : {
         *(.text)

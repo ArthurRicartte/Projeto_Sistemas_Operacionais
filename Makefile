@@ -88,7 +88,7 @@ os.iso: iso/boot/kernel.elf iso/modules/$(PROGRAM_BIN) iso/boot/grub/grub.cfg
 
 # Executa no QEMU
 run: os.iso
-	qemu-system-i386 -cdrom os.iso -serial file:com1.out
+	qemu-system-i386 -cdrom os.iso -serial file:com1.out -d in_asm -D qemu.log
 
 # Depuração com GDB
 debug: os.iso

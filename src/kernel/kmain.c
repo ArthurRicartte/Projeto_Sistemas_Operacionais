@@ -1,6 +1,4 @@
-// Nucleo do Sistema Operacional – Unidade 4
-// Desenvolvido por: Arthur Ricartte - ultima atualizacao (20/02/2026)
-// Modificado para Capítulo 7 - Carregamento de módulos (06/03/2026)
+// Nucleo do Sistema Operacional
 
 #include "fb.h"
 #include "serial.h"

@@ -1,6 +1,3 @@
-/*fb.c implementa o driver do framebuffer que controla a saida
-de texto do console - feito por Arthur Ricartte (20/02/2026)*/
-
 #include "fb.h"
 #include "io.h"
 

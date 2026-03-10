@@ -1,6 +1,4 @@
 // gdt.c - Implementação da Global Descriptor Table
-// Desenvolvido para o Capítulo 5
-
 #include "gdt.h"
 
 // O nosso array com 3 segmentos (Nulo, Código, Dados)

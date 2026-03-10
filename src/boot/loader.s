@@ -1,4 +1,3 @@
-;Desenvolvido por: Arthur Ricartte e Joao Veloso (Ultima Atualizacao: 10-02-2026)
 bits 32
 global loader
 extern kmain

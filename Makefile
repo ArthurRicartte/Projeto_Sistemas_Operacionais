@@ -1,6 +1,3 @@
-# Desenvolvido por: Arthur Ricartte e Joao Veloso - Adaptado para GRUB
-# Ultima atualizacao: 09/03/2026
-
 # Ferramentas
 CC = gcc
 AS = nasm

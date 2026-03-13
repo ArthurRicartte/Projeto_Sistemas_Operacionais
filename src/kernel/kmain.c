@@ -8,11 +8,6 @@
 #include "multiboot.h" // NOVO: Para o Capítulo 7
 #include <stdint.h>
 
-// Declaração da função externa em Assembly
-// extern void enable_paging(uint32_t page_directory_phys);
-// Diretório de páginas global (alinhado a 4KB)
-// uint32_t page_directory[1024] __attribute__((aligned(4096)));
-
 // Função de delay simples (busy wait)
 // Quanto maior o valor, maior a pausa.
 static void sleep(unsigned int timer)

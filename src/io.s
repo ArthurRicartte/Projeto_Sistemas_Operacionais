@@ -1,4 +1,3 @@
-; Desenvolvido por: Arthur Ricartte e Joao Veloso (adaptado do livro)
 global outb
 global inb
 

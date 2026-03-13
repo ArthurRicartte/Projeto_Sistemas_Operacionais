@@ -1,7 +1,3 @@
-; Programa simples para testar carregamento de módulos
-; Desenvolvido por: Arthur Ricartte e Joao Veloso
-; Data: 06/03/2026
-
 bits 32
 
 section .text

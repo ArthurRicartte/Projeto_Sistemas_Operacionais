@@ -5,7 +5,7 @@ LD = ld
 GRUB_MKRESCUE = grub-mkrescue
 
 # Flags de compilação e linkagem
-CFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
+CFLAGS = -m32 -nostdlib -fno-builtin -fno-stack-protector \
          -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c
 ASFLAGS_ELF = -f elf32
 ASFLAGS_BIN = -f bin
@@ -57,7 +57,7 @@ idt.o: src/kernel/idt.c src/kernel/idt.h src/kernel/pic.h
 
 # Linkagem do kernel ELF
 kernel.elf: $(OBJECTS)
-	$(LD) $(LDFLAGS) $(OBJECTS) -o kernel.elf
+	$(LD) $(LDFLAGS) $(OBJECTS) -o kernel.elf -Map=kernel.map
 
 # Compila o programa do usuário para binário puro
 $(PROGRAM_BIN): $(PROGRAM_SRC)
@@ -95,3 +95,4 @@ debug: os.iso
 # Limpeza
 clean:
 	rm -rf *.o *.bin *.elf os.iso iso/ com1.out
+

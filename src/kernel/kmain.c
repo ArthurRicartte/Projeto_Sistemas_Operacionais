@@ -6,6 +6,12 @@
 #include "idt.h"       //Adicionado para o Capítulo 6
 #include "pic.h"       //Adicionado para o Capítulo 6
 #include "multiboot.h" // NOVO: Para o Capítulo 7
+#include <stdint.h>
+
+// Declaração da função externa em Assembly
+// extern void enable_paging(uint32_t page_directory_phys);
+// Diretório de páginas global (alinhado a 4KB)
+// uint32_t page_directory[1024] __attribute__((aligned(4096)));
 
 // Função de delay simples (busy wait)
 // Quanto maior o valor, maior a pausa.
@@ -53,18 +59,8 @@ void kmain(unsigned int ebx) // <--- MUDANÇA: parâmetro adicionado
     fb_write("Kernel em Modo Protegido Funcionando!\n", 37);
     sleep(10000000);
 
-    fb_write("Driver de framebuffer ativo.\n", 30);
+    fb_write("\nDriver de framebuffer ativo.\n", 30);
     sleep(10000000);
-
-    fb_write("Testando rolagem...\n", 20);
-    sleep(10000000);
-
-    // Força rolagem (escreve 30 linhas)
-    for (int i = 0; i < 30; i++)
-    {
-        fb_write("Linha de teste para rolagem.\n", 29);
-        sleep(5000000); // pausa menor entre linhas para ver a rolagem
-    }
 
     // Escreve na porta serial (sera capturada no arquivo com1.out)
     serial_write(SERIAL_COM1, "Hello from serial port!\n", 24);
@@ -127,11 +123,25 @@ void kmain(unsigned int ebx) // <--- MUDANÇA: parâmetro adicionado
     }
     else
     {
-        fb_write("ERRO: Nenhum modulo carregado!\n", 30);
+        fb_write("\nERRO: Nenhum modulo carregado!\n", 30);
         fb_write("Verifique menu.lst e pasta modules/\n", 36);
     }
 
-    fb_write("Fim do Capitulo 7. Loop infinito...\n", 36);
+    // ---------- DEMONSTRAÇÃO DA UNIDADE 9 (HIGHER HALF) ----------
+    fb_write("\n\n[Unidade 9] Verificando higher half...\n", 37);
+
+    // Mostrar o endereço virtual da função kmain (deve ser > 0xC0000000)
+    fb_write("\nEndereco de kmain: ", 19);
+    write_hex((unsigned int)kmain);
+    fb_write("\n", 1);
+
+    // Ler e mostrar o valor do registrador CR3 (endereço físico do page directory)
+    uint32_t cr3_value;
+    __asm__ volatile("mov %%cr3, %0" : "=r"(cr3_value));
+    fb_write("CR3 (page directory fisico): ", 29);
+    write_hex(cr3_value);
+    fb_write("\n", 1);
+    // -------------------------------------------------------------
 
     // Loop infinito original (preservado)
     while (1)

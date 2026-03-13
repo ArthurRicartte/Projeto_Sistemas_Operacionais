@@ -79,7 +79,7 @@ void kmain(unsigned int ebx) // <--- MUDANÇA: parâmetro adicionado
     fb_write("Interrupcoes habilitadas. Digite algo no teclado...\n", 52);
 
     // NOVO: Código do Capítulo 7 - Carregar e executar módulo
-    fb_write("\n[Capitulo 7] Procurando modulos do GRUB...\n", 41);
+    fb_write("\n[Unidade 7] Procurando modulos do GRUB...\n", 41);
 
     // Converter ebx para a estrutura multiboot
     multiboot_info_t *mbinfo = (multiboot_info_t *)ebx;

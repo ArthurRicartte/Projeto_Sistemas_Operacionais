@@ -13,7 +13,7 @@ LDFLAGS = -T config/linker.ld -m elf_i386
 
 # Arquivos objeto do kernel
 LOADER_OBJ = loader.o
-KERNEL_OBJS = kmain.o fb.o serial.o io.o gdt_c.o gdt_s.o idt.o pic.o interrupts.o
+KERNEL_OBJS = kmain.o fb.o serial.o io.o gdt_c.o gdt_s.o idt.o pic.o interrupts.o pmm.o kheap.o
 OBJECTS = $(LOADER_OBJ) $(KERNEL_OBJS)
 
 # Programa do usuário (módulo)
@@ -54,6 +54,12 @@ pic.o: src/kernel/pic.c src/kernel/pic.h src/kernel/io.h
 
 idt.o: src/kernel/idt.c src/kernel/idt.h src/kernel/pic.h
 	$(CC) $(CFLAGS) src/kernel/idt.c -o idt.o
+
+pmm.o: src/kernel/pmm.c src/kernel/pmm.h src/kernel/multiboot.h
+	$(CC) $(CFLAGS) src/kernel/pmm.c -o pmm.o
+
+kheap.o: src/kernel/kheap.c src/kernel/kheap.h src/kernel/pmm.h
+	$(CC) $(CFLAGS) src/kernel/kheap.c -o kheap.o
 
 # Linkagem do kernel ELF
 kernel.elf: $(OBJECTS)

@@ -25,6 +25,19 @@ typedef unsigned long long      uint64_t;
 #define MULTIBOOT_INFO_APM_TABLE    0x00000400
 #define MULTIBOOT_INFO_VIDEO_INFO   0x00000800
 
+/* Estrutura para o mapa de memoria (mmap) */
+typedef struct multiboot_mmap_entry {
+    uint32_t size;
+    uint64_t addr;
+    uint64_t len;
+#define MULTIBOOT_MEMORY_AVAILABLE              1
+#define MULTIBOOT_MEMORY_RESERVED               2
+#define MULTIBOOT_MEMORY_ACPI_RECLAIMABLE       3
+#define MULTIBOOT_MEMORY_NVS                    4
+#define MULTIBOOT_MEMORY_BADRAM                 5
+    uint32_t type;
+} __attribute__((packed)) multiboot_memory_map_t;
+
 /* Estrutura para um módulo carregado */
 typedef struct multiboot_module {
     uint32_t    mod_start;

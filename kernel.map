@@ -1,0 +1,492 @@
+
+Discarded input sections
+
+ .group         0x00000000        0x8 kmain.o
+ .group         0x00000000        0x8 kmain.o
+ .group         0x00000000        0x8 fb.o
+ .group         0x00000000        0x8 fb.o
+ .text.__x86.get_pc_thunk.ax
+                0x00000000        0x4 fb.o
+ .text.__x86.get_pc_thunk.bx
+                0x00000000        0x4 fb.o
+ .group         0x00000000        0x8 serial.o
+ .group         0x00000000        0x8 serial.o
+ .text.__x86.get_pc_thunk.ax
+                0x00000000        0x4 serial.o
+ .text.__x86.get_pc_thunk.bx
+                0x00000000        0x4 serial.o
+ .group         0x00000000        0x8 gdt_c.o
+ .group         0x00000000        0x8 gdt_c.o
+ .text.__x86.get_pc_thunk.ax
+                0x00000000        0x4 gdt_c.o
+ .text.__x86.get_pc_thunk.bx
+                0x00000000        0x4 gdt_c.o
+ .group         0x00000000        0x8 idt.o
+ .group         0x00000000        0x8 idt.o
+ .group         0x00000000        0x8 idt.o
+ .text.__x86.get_pc_thunk.ax
+                0x00000000        0x4 idt.o
+ .text.__x86.get_pc_thunk.bx
+                0x00000000        0x4 idt.o
+ .group         0x00000000        0x8 pic.o
+ .text.__x86.get_pc_thunk.bx
+                0x00000000        0x4 pic.o
+ .group         0x00000000        0x8 pmm.o
+ .group         0x00000000        0x8 pmm.o
+ .text.__x86.get_pc_thunk.ax
+                0x00000000        0x4 pmm.o
+ .text.__x86.get_pc_thunk.bx
+                0x00000000        0x4 pmm.o
+ .group         0x00000000        0x8 kheap.o
+ .text.__x86.get_pc_thunk.ax
+                0x00000000        0x4 kheap.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+                0xc0100000                        . = 0xc0100000
+                0xc0100000                        kernel_virtual_start = .
+                0x00100000                        kernel_physical_start = (. - 0xc0000000)
+
+.text           0xc0100000     0x2126 load address 0x00100000
+ *(.text)
+ .text          0xc0100000       0x40 loader.o
+                0xc010000c                loader
+ .text          0xc0100040      0x4b5 kmain.o
+                0xc0100104                kmain
+ .text          0xc01004f5      0x3b8 fb.o
+                0xc01004f5                fb_write_cell
+                0xc0100559                fb_move_cursor
+                0xc01006dc                fb_write
+                0xc01007a8                fb_clear
+                0xc01007fe                fb_get_cursor
+                0xc0100814                fb_set_cursor
+                0xc0100849                fb_delete_char
+ .text          0xc01008ad      0x14e serial.o
+                0xc01008ad                serial_configure
+                0xc0100956                serial_is_transmit_fifo_empty
+                0xc0100991                serial_write
+ *fill*         0xc01009fb        0x5 
+ .text          0xc0100a00       0x12 io.o
+                0xc0100a00                outb
+                0xc0100a0b                inb
+ .text          0xc0100a12      0x129 gdt_c.o
+                0xc0100a12                gdt_set_gate
+                0xc0100aba                init_gdt
+ *fill*         0xc0100b3b        0x5 
+ .text          0xc0100b40       0x1d gdt_s.o
+                0xc0100b40                gdt_flush
+ .text          0xc0100b5d      0x27e idt.o
+                0xc0100b5d                idt_set_gate
+                0xc0100bc8                init_idt
+                0xc0100c7d                interrupt_handler
+ .text          0xc0100ddb      0x121 pic.o
+                0xc0100ddb                init_pic
+                0xc0100e9e                pic_acknowledge
+ *fill*         0xc0100efc        0x4 
+ .text          0xc0100f00      0xe65 interrupts.o
+                0xc0100f00                interrupt_handler_0
+                0xc0100f09                interrupt_handler_1
+                0xc0100f12                interrupt_handler_2
+                0xc0100f1b                interrupt_handler_3
+                0xc0100f24                interrupt_handler_4
+                0xc0100f2d                interrupt_handler_5
+                0xc0100f36                interrupt_handler_6
+                0xc0100f3f                interrupt_handler_7
+                0xc0100f48                interrupt_handler_8
+                0xc0100f4f                interrupt_handler_9
+                0xc0100f58                interrupt_handler_10
+                0xc0100f5f                interrupt_handler_11
+                0xc0100f66                interrupt_handler_12
+                0xc0100f6d                interrupt_handler_13
+                0xc0100f74                interrupt_handler_14
+                0xc0100f7b                interrupt_handler_15
+                0xc0100f84                interrupt_handler_16
+                0xc0100f8d                interrupt_handler_17
+                0xc0100f94                interrupt_handler_18
+                0xc0100f9d                interrupt_handler_19
+                0xc0100fa6                interrupt_handler_20
+                0xc0100faf                interrupt_handler_21
+                0xc0100fb8                interrupt_handler_22
+                0xc0100fc1                interrupt_handler_23
+                0xc0100fca                interrupt_handler_24
+                0xc0100fd3                interrupt_handler_25
+                0xc0100fdc                interrupt_handler_26
+                0xc0100fe5                interrupt_handler_27
+                0xc0100fee                interrupt_handler_28
+                0xc0100ff7                interrupt_handler_29
+                0xc0101000                interrupt_handler_30
+                0xc0101009                interrupt_handler_31
+                0xc0101012                interrupt_handler_32
+                0xc010101b                interrupt_handler_33
+                0xc0101024                interrupt_handler_34
+                0xc010102d                interrupt_handler_35
+                0xc0101036                interrupt_handler_36
+                0xc010103f                interrupt_handler_37
+                0xc0101048                interrupt_handler_38
+                0xc0101051                interrupt_handler_39
+                0xc010105a                interrupt_handler_40
+                0xc0101063                interrupt_handler_41
+                0xc010106c                interrupt_handler_42
+                0xc0101075                interrupt_handler_43
+                0xc010107e                interrupt_handler_44
+                0xc0101087                interrupt_handler_45
+                0xc0101090                interrupt_handler_46
+                0xc0101099                interrupt_handler_47
+                0xc01010a2                interrupt_handler_48
+                0xc01010ab                interrupt_handler_49
+                0xc01010b4                interrupt_handler_50
+                0xc01010bd                interrupt_handler_51
+                0xc01010c6                interrupt_handler_52
+                0xc01010cf                interrupt_handler_53
+                0xc01010d8                interrupt_handler_54
+                0xc01010e1                interrupt_handler_55
+                0xc01010ea                interrupt_handler_56
+                0xc01010f3                interrupt_handler_57
+                0xc01010fc                interrupt_handler_58
+                0xc0101105                interrupt_handler_59
+                0xc010110e                interrupt_handler_60
+                0xc0101117                interrupt_handler_61
+                0xc0101120                interrupt_handler_62
+                0xc0101129                interrupt_handler_63
+                0xc0101132                interrupt_handler_64
+                0xc010113b                interrupt_handler_65
+                0xc0101144                interrupt_handler_66
+                0xc010114d                interrupt_handler_67
+                0xc0101156                interrupt_handler_68
+                0xc010115f                interrupt_handler_69
+                0xc0101168                interrupt_handler_70
+                0xc0101171                interrupt_handler_71
+                0xc010117a                interrupt_handler_72
+                0xc0101183                interrupt_handler_73
+                0xc010118c                interrupt_handler_74
+                0xc0101195                interrupt_handler_75
+                0xc010119e                interrupt_handler_76
+                0xc01011a7                interrupt_handler_77
+                0xc01011b0                interrupt_handler_78
+                0xc01011b9                interrupt_handler_79
+                0xc01011c2                interrupt_handler_80
+                0xc01011cb                interrupt_handler_81
+                0xc01011d4                interrupt_handler_82
+                0xc01011dd                interrupt_handler_83
+                0xc01011e6                interrupt_handler_84
+                0xc01011ef                interrupt_handler_85
+                0xc01011f8                interrupt_handler_86
+                0xc0101201                interrupt_handler_87
+                0xc010120a                interrupt_handler_88
+                0xc0101213                interrupt_handler_89
+                0xc010121c                interrupt_handler_90
+                0xc0101225                interrupt_handler_91
+                0xc010122e                interrupt_handler_92
+                0xc0101237                interrupt_handler_93
+                0xc0101240                interrupt_handler_94
+                0xc0101249                interrupt_handler_95
+                0xc0101252                interrupt_handler_96
+                0xc010125b                interrupt_handler_97
+                0xc0101264                interrupt_handler_98
+                0xc010126d                interrupt_handler_99
+                0xc0101276                interrupt_handler_100
+                0xc010127f                interrupt_handler_101
+                0xc0101288                interrupt_handler_102
+                0xc0101291                interrupt_handler_103
+                0xc010129a                interrupt_handler_104
+                0xc01012a3                interrupt_handler_105
+                0xc01012ac                interrupt_handler_106
+                0xc01012b5                interrupt_handler_107
+                0xc01012be                interrupt_handler_108
+                0xc01012c7                interrupt_handler_109
+                0xc01012d0                interrupt_handler_110
+                0xc01012d9                interrupt_handler_111
+                0xc01012e2                interrupt_handler_112
+                0xc01012eb                interrupt_handler_113
+                0xc01012f4                interrupt_handler_114
+                0xc01012fd                interrupt_handler_115
+                0xc0101306                interrupt_handler_116
+                0xc010130f                interrupt_handler_117
+                0xc0101318                interrupt_handler_118
+                0xc0101321                interrupt_handler_119
+                0xc010132a                interrupt_handler_120
+                0xc0101333                interrupt_handler_121
+                0xc010133c                interrupt_handler_122
+                0xc0101345                interrupt_handler_123
+                0xc010134e                interrupt_handler_124
+                0xc0101357                interrupt_handler_125
+                0xc0101360                interrupt_handler_126
+                0xc0101369                interrupt_handler_127
+                0xc0101372                interrupt_handler_128
+                0xc010137e                interrupt_handler_129
+                0xc010138a                interrupt_handler_130
+                0xc0101396                interrupt_handler_131
+                0xc01013a2                interrupt_handler_132
+                0xc01013ae                interrupt_handler_133
+                0xc01013ba                interrupt_handler_134
+                0xc01013c6                interrupt_handler_135
+                0xc01013d2                interrupt_handler_136
+                0xc01013de                interrupt_handler_137
+                0xc01013ea                interrupt_handler_138
+                0xc01013f6                interrupt_handler_139
+                0xc0101402                interrupt_handler_140
+                0xc010140e                interrupt_handler_141
+                0xc010141a                interrupt_handler_142
+                0xc0101426                interrupt_handler_143
+                0xc0101432                interrupt_handler_144
+                0xc010143e                interrupt_handler_145
+                0xc010144a                interrupt_handler_146
+                0xc0101456                interrupt_handler_147
+                0xc0101462                interrupt_handler_148
+                0xc010146e                interrupt_handler_149
+                0xc010147a                interrupt_handler_150
+                0xc0101486                interrupt_handler_151
+                0xc0101492                interrupt_handler_152
+                0xc010149e                interrupt_handler_153
+                0xc01014aa                interrupt_handler_154
+                0xc01014b6                interrupt_handler_155
+                0xc01014c2                interrupt_handler_156
+                0xc01014ce                interrupt_handler_157
+                0xc01014da                interrupt_handler_158
+                0xc01014e6                interrupt_handler_159
+                0xc01014f2                interrupt_handler_160
+                0xc01014fe                interrupt_handler_161
+                0xc010150a                interrupt_handler_162
+                0xc0101516                interrupt_handler_163
+                0xc0101522                interrupt_handler_164
+                0xc010152e                interrupt_handler_165
+                0xc010153a                interrupt_handler_166
+                0xc0101546                interrupt_handler_167
+                0xc0101552                interrupt_handler_168
+                0xc010155e                interrupt_handler_169
+                0xc010156a                interrupt_handler_170
+                0xc0101576                interrupt_handler_171
+                0xc0101582                interrupt_handler_172
+                0xc010158e                interrupt_handler_173
+                0xc010159a                interrupt_handler_174
+                0xc01015a6                interrupt_handler_175
+                0xc01015b2                interrupt_handler_176
+                0xc01015be                interrupt_handler_177
+                0xc01015ca                interrupt_handler_178
+                0xc01015d6                interrupt_handler_179
+                0xc01015e2                interrupt_handler_180
+                0xc01015ee                interrupt_handler_181
+                0xc01015fa                interrupt_handler_182
+                0xc0101606                interrupt_handler_183
+                0xc0101612                interrupt_handler_184
+                0xc010161e                interrupt_handler_185
+                0xc010162a                interrupt_handler_186
+                0xc0101636                interrupt_handler_187
+                0xc0101642                interrupt_handler_188
+                0xc010164e                interrupt_handler_189
+                0xc010165a                interrupt_handler_190
+                0xc0101666                interrupt_handler_191
+                0xc0101672                interrupt_handler_192
+                0xc010167e                interrupt_handler_193
+                0xc010168a                interrupt_handler_194
+                0xc0101696                interrupt_handler_195
+                0xc01016a2                interrupt_handler_196
+                0xc01016ae                interrupt_handler_197
+                0xc01016ba                interrupt_handler_198
+                0xc01016c6                interrupt_handler_199
+                0xc01016d2                interrupt_handler_200
+                0xc01016de                interrupt_handler_201
+                0xc01016ea                interrupt_handler_202
+                0xc01016f6                interrupt_handler_203
+                0xc0101702                interrupt_handler_204
+                0xc010170e                interrupt_handler_205
+                0xc010171a                interrupt_handler_206
+                0xc0101726                interrupt_handler_207
+                0xc0101732                interrupt_handler_208
+                0xc010173e                interrupt_handler_209
+                0xc010174a                interrupt_handler_210
+                0xc0101756                interrupt_handler_211
+                0xc0101762                interrupt_handler_212
+                0xc010176e                interrupt_handler_213
+                0xc010177a                interrupt_handler_214
+                0xc0101786                interrupt_handler_215
+                0xc0101792                interrupt_handler_216
+                0xc010179e                interrupt_handler_217
+                0xc01017aa                interrupt_handler_218
+                0xc01017b6                interrupt_handler_219
+                0xc01017c2                interrupt_handler_220
+                0xc01017ce                interrupt_handler_221
+                0xc01017da                interrupt_handler_222
+                0xc01017e6                interrupt_handler_223
+                0xc01017f2                interrupt_handler_224
+                0xc01017fe                interrupt_handler_225
+                0xc010180a                interrupt_handler_226
+                0xc0101816                interrupt_handler_227
+                0xc0101822                interrupt_handler_228
+                0xc010182e                interrupt_handler_229
+                0xc010183a                interrupt_handler_230
+                0xc0101846                interrupt_handler_231
+                0xc0101852                interrupt_handler_232
+                0xc010185e                interrupt_handler_233
+                0xc010186a                interrupt_handler_234
+                0xc0101876                interrupt_handler_235
+                0xc0101882                interrupt_handler_236
+                0xc010188e                interrupt_handler_237
+                0xc010189a                interrupt_handler_238
+                0xc01018a6                interrupt_handler_239
+                0xc01018b2                interrupt_handler_240
+                0xc01018be                interrupt_handler_241
+                0xc01018c7                interrupt_handler_242
+                0xc01018d0                interrupt_handler_243
+                0xc01018d9                interrupt_handler_244
+                0xc01018e2                interrupt_handler_245
+                0xc01018eb                interrupt_handler_246
+                0xc01018f4                interrupt_handler_247
+                0xc01018fd                interrupt_handler_248
+                0xc0101906                interrupt_handler_249
+                0xc010190f                interrupt_handler_250
+                0xc0101918                interrupt_handler_251
+                0xc0101921                interrupt_handler_252
+                0xc010192a                interrupt_handler_253
+                0xc0101933                interrupt_handler_254
+                0xc010193c                interrupt_handler_255
+                0xc0101945                common_interrupt_handler
+                0xc010195d                load_idt
+                0xc0101965                interrupt_handlers
+ .text          0xc0101d65      0x364 pmm.o
+                0xc0101ee5                pmm_init
+                0xc0102014                pmm_alloc_page
+                0xc0102079                pmm_free_page
+ .text          0xc01020c9       0x5d kheap.o
+                0xc01020c9                kmalloc
+                0xc01020f9                kfree
+
+.iplt           0xc0102126        0x0 load address 0x00102126
+ .iplt          0xc0102126        0x0 loader.o
+
+.text.__x86.get_pc_thunk.ax
+                0xc0102126        0x4 load address 0x00102126
+ .text.__x86.get_pc_thunk.ax
+                0xc0102126        0x4 kmain.o
+                0xc0102126                __x86.get_pc_thunk.ax
+
+.text.__x86.get_pc_thunk.bx
+                0xc010212a        0x4 load address 0x0010212a
+ .text.__x86.get_pc_thunk.bx
+                0xc010212a        0x4 kmain.o
+                0xc010212a                __x86.get_pc_thunk.bx
+
+.text.__x86.get_pc_thunk.dx
+                0xc010212e        0x4 load address 0x0010212e
+ .text.__x86.get_pc_thunk.dx
+                0xc010212e        0x4 idt.o
+                0xc010212e                __x86.get_pc_thunk.dx
+
+.rodata         0xc0103000      0x396 load address 0x00103000
+ *(.rodata*)
+ .rodata        0xc0103000      0x35b kmain.o
+ .rodata        0xc010335b        0xe idt.o
+ *fill*         0xc0103369        0x3 
+ .rodata        0xc010336c       0x2a pmm.o
+
+.eh_frame       0xc0103398      0x4bc load address 0x00103398
+ .eh_frame      0xc0103398       0xa0 kmain.o
+ .eh_frame      0xc0103438      0x118 fb.o
+                                0x158 (size before relaxing)
+ .eh_frame      0xc0103550       0x6c serial.o
+                                 0xac (size before relaxing)
+ .eh_frame      0xc01035bc       0x44 gdt_c.o
+                                 0x84 (size before relaxing)
+ .eh_frame      0xc0103600       0x9c idt.o
+                                 0xdc (size before relaxing)
+ .eh_frame      0xc010369c       0x48 pic.o
+                                 0x74 (size before relaxing)
+ .eh_frame      0xc01036e4      0x128 pmm.o
+                                0x168 (size before relaxing)
+ .eh_frame      0xc010380c       0x48 kheap.o
+                                 0x74 (size before relaxing)
+
+.rel.dyn        0xc0103854        0x0 load address 0x00103854
+ .rel.got       0xc0103854        0x0 loader.o
+ .rel.iplt      0xc0103854        0x0 loader.o
+
+.data           0xc0104000     0x105a load address 0x00104000
+ *(.data)
+ .data          0xc0104000     0x1000 loader.o
+                0xc0104000                page_directory
+ .data          0xc0105000        0x0 kmain.o
+ .data          0xc0105000        0x4 fb.o
+ .data          0xc0105004        0x0 serial.o
+ .data          0xc0105004        0x0 gdt_c.o
+ *fill*         0xc0105004       0x1c 
+ .data          0xc0105020       0x3a idt.o
+ .data          0xc010505a        0x0 pic.o
+ .data          0xc010505a        0x0 pmm.o
+ .data          0xc010505a        0x0 kheap.o
+
+.got            0xc010505c        0x0 load address 0x0010505c
+ .got           0xc010505c        0x0 loader.o
+
+.got.plt        0xc010505c        0xc load address 0x0010505c
+ .got.plt       0xc010505c        0xc loader.o
+                0xc010505c                _GLOBAL_OFFSET_TABLE_
+
+.igot.plt       0xc0105068        0x0 load address 0x00105068
+ .igot.plt      0xc0105068        0x0 loader.o
+
+.bss            0xc0106000    0x20868 load address 0x00106000
+ *(COMMON)
+ *(.bss)
+ .bss           0xc0106000        0x0 kmain.o
+ .bss           0xc0106000        0x2 fb.o
+ .bss           0xc0106002        0x0 serial.o
+ *fill*         0xc0106002        0x2 
+ .bss           0xc0106004       0x1e gdt_c.o
+                0xc0106004                gdt
+                0xc010601c                gdt_ptr
+ *fill*         0xc0106022       0x1e 
+ .bss           0xc0106040      0x806 idt.o
+ .bss           0xc0106846        0x0 pic.o
+ *fill*         0xc0106846       0x1a 
+ .bss           0xc0106860    0x20008 pmm.o
+ .bss           0xc0126868        0x0 kheap.o
+                0xc0126868                        kernel_virtual_end = .
+                0x00126868                        kernel_physical_end = (. - 0xc0000000)
+LOAD loader.o
+LOAD kmain.o
+LOAD fb.o
+LOAD serial.o
+LOAD io.o
+LOAD gdt_c.o
+LOAD gdt_s.o
+LOAD idt.o
+LOAD pic.o
+LOAD interrupts.o
+LOAD pmm.o
+LOAD kheap.o
+OUTPUT(kernel.elf elf32-i386)
+
+.comment        0x00000000       0x2b
+ .comment       0x00000000       0x2b kmain.o
+                                 0x2c (size before relaxing)
+ .comment       0x0000002b       0x2c fb.o
+ .comment       0x0000002b       0x2c serial.o
+ .comment       0x0000002b       0x2c gdt_c.o
+ .comment       0x0000002b       0x2c idt.o
+ .comment       0x0000002b       0x2c pic.o
+ .comment       0x0000002b       0x2c pmm.o
+ .comment       0x0000002b       0x2c kheap.o
+
+.note.GNU-stack
+                0x00000000        0x0
+ .note.GNU-stack
+                0x00000000        0x0 kmain.o
+ .note.GNU-stack
+                0x00000000        0x0 fb.o
+ .note.GNU-stack
+                0x00000000        0x0 serial.o
+ .note.GNU-stack
+                0x00000000        0x0 gdt_c.o
+ .note.GNU-stack
+                0x00000000        0x0 idt.o
+ .note.GNU-stack
+                0x00000000        0x0 pic.o
+ .note.GNU-stack
+                0x00000000        0x0 pmm.o
+ .note.GNU-stack
+                0x00000000        0x0 kheap.o

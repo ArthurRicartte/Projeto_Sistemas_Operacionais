@@ -6,7 +6,14 @@
 #include "idt.h"       //Adicionado para o Capítulo 6
 #include "pic.h"       //Adicionado para o Capítulo 6
 #include "multiboot.h" // NOVO: Para o Capítulo 7
-#include <stdint.h>
+#include "pmm.h"       // Capítulo 10 - Page Frame Allocator
+#include "kheap.h"     // Capítulo 10 - Kernel Heap
+
+/* Labels exportados pelo linker script */
+extern uint32_t kernel_physical_start;
+extern uint32_t kernel_physical_end;
+extern uint32_t kernel_virtual_start;
+extern uint32_t kernel_virtual_end;
 
 // Função de delay simples (busy wait)
 // Quanto maior o valor, maior a pausa.
@@ -137,6 +144,35 @@ void kmain(unsigned int ebx) // <--- MUDANÇA: parâmetro adicionado
     write_hex(cr3_value);
     fb_write("\n", 1);
     // -------------------------------------------------------------
+
+    // ---------- UNIDADE 10: PAGE FRAME ALLOCATION ----------
+    fb_write("\n[Unidade 10] Inicializando PMM...\n", 35);
+    serial_write(SERIAL_COM1, "[Unidade 10] Inicializando PMM...\n", 34);
+
+    /* O ponteiro mbinfo contem enderecos FISICOS do GRUB.
+     * Precisamos converter para virtual somando 0xC0000000 */
+    multiboot_info_t *mbinfo_virt = (multiboot_info_t *)((uint32_t)mbinfo);
+    pmm_init(mbinfo_virt,
+             (uint32_t)&kernel_physical_start,
+             (uint32_t)&kernel_physical_end);
+
+    fb_write("PMM inicializado com sucesso!\n", 30);
+
+    // Teste: alocar e liberar um page frame
+    void* test_page = pmm_alloc_page();
+    if (test_page) {
+        fb_write("Pagina alocada (fisico): ", 25);
+        write_hex((uint32_t)test_page);
+        fb_write("\n", 1);
+        serial_write(SERIAL_COM1, "Pagina alocada com sucesso!\n", 28);
+
+        kfree(test_page);
+        fb_write("Pagina liberada com sucesso!\n", 29);
+    } else {
+        fb_write("ERRO: Falha ao alocar pagina!\n", 30);
+        serial_write(SERIAL_COM1, "ERRO: Falha ao alocar pagina!\n", 30);
+    }
+    // ---------------------------------------------------------
 
     // Loop infinito original (preservado)
     while (1)

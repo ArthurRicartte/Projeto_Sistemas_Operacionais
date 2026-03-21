@@ -1,20 +1,20 @@
 #include "pmm.h"
 #include "fb.h"
 
-/* Cada bit no bitmap representa um page frame de 4KB */
+/* cada bit no bitmap representa um page frame de 4KB */
 #define BLOCKS_PER_BYTE 8
 
-/* Suporta até 4GB de RAM: 4GB / 4KB = 1048576 page frames */
+/* suporta até 4GB de RAM: 4GB / 4KB = 1048576 page frames */
 #define MAX_BLOCKS 1048576
 
-/* Bitmap: 1 = usado, 0 = livre */
+/* bitmap: 1 = usado, 0 = livre */
 static uint8_t memory_map[MAX_BLOCKS / BLOCKS_PER_BYTE];
 
-/* Contadores */
+/* contadores */
 static uint32_t total_free_blocks = 0;
 static uint32_t max_memory_blocks = 0;
 
-/* ---------- Operacoes no bitmap ---------- */
+/* operacoes no bitmap*/
 
 static inline void bitmap_set(uint32_t bit) {
     memory_map[bit / BLOCKS_PER_BYTE] |= (1 << (bit % BLOCKS_PER_BYTE));
@@ -28,9 +28,8 @@ static inline int bitmap_test(uint32_t bit) {
     return memory_map[bit / BLOCKS_PER_BYTE] & (1 << (bit % BLOCKS_PER_BYTE));
 }
 
-/* ---------- Funcoes internas ---------- */
 
-/* Marca uma regiao de memoria como LIVRE (disponivel para alocacao) */
+/* funcoes internas */
 static void pmm_init_region(uint32_t base, uint32_t size) {
     uint32_t align = base / PMM_BLOCK_SIZE;
     uint32_t blocks = size / PMM_BLOCK_SIZE;
@@ -40,7 +39,7 @@ static void pmm_init_region(uint32_t base, uint32_t size) {
     }
 }
 
-/* Marca uma regiao de memoria como USADA (reservada) */
+/* marca uma regiao de memoria como USADA (reservada) */
 static void pmm_deinit_region(uint32_t base, uint32_t size) {
     uint32_t align = base / PMM_BLOCK_SIZE;
     uint32_t blocks = (size + PMM_BLOCK_SIZE - 1) / PMM_BLOCK_SIZE; /* arredonda pra cima */
@@ -50,7 +49,7 @@ static void pmm_deinit_region(uint32_t base, uint32_t size) {
     }
 }
 
-/* ---------- Funcoes publicas ---------- */
+/* funcoes gerais */
 
 void pmm_init(multiboot_info_t* mbinfo, uint32_t kernel_phys_start, uint32_t kernel_phys_end) {
     /* Inicialmente marca TODA memoria como usada (bits = 1) */
@@ -61,7 +60,7 @@ void pmm_init(multiboot_info_t* mbinfo, uint32_t kernel_phys_start, uint32_t ker
     total_free_blocks = 0;
     max_memory_blocks = 0;
 
-    /* Verifica se o GRUB forneceu o mapa de memoria (flag bit 6) */
+    /* verifica se o GRUB forneceu o mapa de memoria (flag bit 6) */
     if (!(mbinfo->flags & MULTIBOOT_INFO_MEM_MAP)) {
         fb_write("ERRO: GRUB nao forneceu mapa de memoria!\n", 42);
         return;
@@ -76,35 +75,35 @@ void pmm_init(multiboot_info_t* mbinfo, uint32_t kernel_phys_start, uint32_t ker
         (mbinfo->mmap_addr + KERNEL_VIRTUAL_BASE);
     uint32_t mmap_end = mbinfo->mmap_addr + mbinfo->mmap_length + KERNEL_VIRTUAL_BASE;
 
-    /* Percorre o mapa de memoria do GRUB */
+    /* percorre o mapa de memoria do GRUB */
     while ((uint32_t) mmap < mmap_end) {
         if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE) {
             uint32_t addr = (uint32_t) mmap->addr;
             uint32_t len = (uint32_t) mmap->len;
 
-            /* Marca essa regiao como livre no bitmap */
+            /* marca essa regiao como livre no bitmap */
             pmm_init_region(addr, len);
 
-            /* Atualiza o numero maximo de blocos */
+            /* atualiza o numero maximo de blocos */
             uint32_t max_block = (addr + len) / PMM_BLOCK_SIZE;
             if (max_block > max_memory_blocks) {
                 max_memory_blocks = max_block;
             }
         }
-        /* Avanca para a proxima entrada (size + sizeof(size)) */
+        /* avanca para a proxima entrada (size + sizeof(size)) */
         mmap = (multiboot_memory_map_t*)
             ((uint32_t) mmap + mmap->size + sizeof(mmap->size));
     }
 
-    /* Reserva o primeiro 1MB (BIOS, GRUB, I/O mapeado, etc) */
+    /* reserva o primeiro 1MB (BIOS, GRUB, I/O mapeado, etc) */
     pmm_deinit_region(0x0, 0x100000);
 
-    /* Reserva a memoria usada pelo kernel */
+    /* reserva a memoria usada pelo kernel */
     pmm_deinit_region(kernel_phys_start, kernel_phys_end - kernel_phys_start);
 }
 
 void* pmm_alloc_page(void) {
-    /* Procura o primeiro bit livre no bitmap */
+    /* procura o primeiro bit livre no bitmap */
     for (uint32_t i = 0; i < max_memory_blocks; i++) {
         if (!bitmap_test(i)) {
             bitmap_set(i);

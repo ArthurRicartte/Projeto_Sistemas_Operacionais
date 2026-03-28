@@ -11,24 +11,20 @@ ASFLAGS_ELF = -f elf32
 ASFLAGS_BIN = -f bin
 LDFLAGS = -T config/linker.ld -m elf_i386
 
-# Arquivos objeto do kernel
+# Arquivos objeto do kernel (restore_context.o REMOVIDO)
 LOADER_OBJ = loader.o
-KERNEL_OBJS = kmain.o fb.o serial.o io.o gdt_c.o gdt_s.o idt.o pic.o interrupts.o pmm.o kheap.o
+KERNEL_OBJS = kmain.o fb.o serial.o io.o gdt_c.o gdt_s.o idt.o pic.o interrupts.o pmm.o kheap.o process.o pit.o
 OBJECTS = $(LOADER_OBJ) $(KERNEL_OBJS)
 
-# Programa do usuário (módulo)
-PROGRAM_SRC = src/program.s
-PROGRAM_BIN = program.bin
-
 # Alvo padrão
-all: os.iso
+all: programs os.iso
 
 # Compila o loader (assembly)
 loader.o: src/boot/loader.s
 	$(AS) $(ASFLAGS_ELF) src/boot/loader.s -o loader.o
 
 # Compila os arquivos C
-kmain.o: src/kernel/kmain.c src/kernel/gdt.h src/kernel/multiboot.h
+kmain.o: src/kernel/kmain.c src/kernel/gdt.h src/kernel/multiboot.h src/kernel/process.h
 	$(CC) $(CFLAGS) src/kernel/kmain.c -o kmain.o
 
 fb.o: src/kernel/fb.c src/kernel/fb.h src/kernel/io.h
@@ -52,7 +48,7 @@ interrupts.o: src/interrupts.s
 pic.o: src/kernel/pic.c src/kernel/pic.h src/kernel/io.h
 	$(CC) $(CFLAGS) src/kernel/pic.c -o pic.o
 
-idt.o: src/kernel/idt.c src/kernel/idt.h src/kernel/pic.h
+idt.o: src/kernel/idt.c src/kernel/idt.h src/kernel/pic.h src/kernel/pit.h
 	$(CC) $(CFLAGS) src/kernel/idt.c -o idt.o
 
 pmm.o: src/kernel/pmm.c src/kernel/pmm.h src/kernel/multiboot.h
@@ -61,37 +57,48 @@ pmm.o: src/kernel/pmm.c src/kernel/pmm.h src/kernel/multiboot.h
 kheap.o: src/kernel/kheap.c src/kernel/kheap.h src/kernel/pmm.h
 	$(CC) $(CFLAGS) src/kernel/kheap.c -o kheap.o
 
+process.o: src/kernel/process.c src/kernel/process.h src/kernel/string.h src/kernel/pmm.h src/kernel/kheap.h
+	$(CC) $(CFLAGS) src/kernel/process.c -o process.o
+
+pit.o: src/kernel/pit.c src/kernel/pit.h src/kernel/io.h src/kernel/process.h
+	$(CC) $(CFLAGS) src/kernel/pit.c -o pit.o
+
 # Linkagem do kernel ELF
 kernel.elf: $(OBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o kernel.elf -Map=kernel.map
 
-# Compila o programa do usuário para binário puro
-$(PROGRAM_BIN): $(PROGRAM_SRC)
-	$(AS) $(ASFLAGS_BIN) $(PROGRAM_SRC) -o $(PROGRAM_BIN)
+# Programas de teste (assembly)
+PROGRAMS = program1 program2 program3 program4
+
+programs: $(foreach prog,$(PROGRAMS),$(prog).bin)
+
+%.bin: src/%.s
+	$(AS) $(ASFLAGS_BIN) $< -o $@
 
 # Prepara a estrutura de diretórios para a ISO
 iso/:
 	mkdir -p iso/boot/grub
 	mkdir -p iso/modules
 
-# Copia o kernel e o módulo para a ISO
+# Copia o kernel e módulos para a ISO
 iso/boot/kernel.elf: kernel.elf | iso/
 	cp kernel.elf iso/boot/
 
-iso/modules/$(PROGRAM_BIN): $(PROGRAM_BIN) | iso/
-	cp $(PROGRAM_BIN) iso/modules/
+# Regra genérica para copiar os binários dos programas
+iso/modules/%.bin: %.bin | iso/
+	cp $< $@
 
 # Copia o arquivo de configuração do GRUB
 iso/boot/grub/grub.cfg: src/boot/grub.cfg | iso/
 	cp src/boot/grub.cfg iso/boot/grub/
 
-# Gera a ISO usando grub-mkrescue
-os.iso: iso/boot/kernel.elf iso/modules/$(PROGRAM_BIN) iso/boot/grub/grub.cfg
+# Gera a ISO (Dependências atualizadas)
+os.iso: iso/boot/kernel.elf iso/boot/grub/grub.cfg $(foreach prog,$(PROGRAMS),iso/modules/$(prog).bin)
 	$(GRUB_MKRESCUE) -o os.iso iso/
 
 # Executa no QEMU
 run: os.iso
-	qemu-system-i386 -cdrom os.iso -serial file:com1.out -d in_asm -D qemu.log
+	qemu-system-i386 -cdrom os.iso -serial file:com1.out
 
 # Depuração com GDB
 debug: os.iso
@@ -100,5 +107,4 @@ debug: os.iso
 
 # Limpeza
 clean:
-	rm -rf *.o *.bin *.elf os.iso iso/ com1.out
-
+	rm -rf *.o *.bin *.elf os.iso iso/ com1.out kernel.map

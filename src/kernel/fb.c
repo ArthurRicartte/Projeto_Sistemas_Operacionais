@@ -71,7 +71,8 @@ static void fb_scroll(void)
         fb[2 * last] = ' ';
         fb[2 * last + 1] = (FB_WHITE << 4) | FB_BLACK;
     }
-    cursor_pos -= FB_WIDTH;
+    // Ajusta o cursor para o início da última linha após o scroll
+    cursor_pos = (FB_HEIGHT - 1) * FB_WIDTH;
 }
 
 int fb_write(char *buf, unsigned int len)
@@ -88,10 +89,13 @@ int fb_write(char *buf, unsigned int len)
             fb_write_cell(cursor_pos, c, FB_WHITE, FB_BLACK);
             cursor_pos++;
         }
-        if (cursor_pos >= FB_WIDTH * FB_HEIGHT)
+
+        // Verifica se precisa rolar a tela (pode precisar rolar múltiplas vezes)
+        while (cursor_pos >= FB_WIDTH * FB_HEIGHT)
         {
             fb_scroll();
         }
+
         fb_move_cursor(cursor_pos);
     }
     return len;

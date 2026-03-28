@@ -33,21 +33,24 @@ interrupt_handler_%1:
 %endrep
 
 ; Handler comum
-common_interrupt_handler:
-    pusha                       ; salva todos os registradores (8 * 4 = 32 bytes)
+common_interrupt_handler:               
+    pusha
+    push ds
+    push es
+    push fs
+    push gs
 
-    ; Chama interrupt_handler(cpu_state*, stack_state*, interrupt)
-    push dword [esp+32]         ; número da interrupção (terceiro argumento)
-    lea eax, [esp+36]           ; endereço do error_code (stack_state)
-    push eax                    ; ponteiro para stack_state (segundo argumento)
-    push esp                    ; ponteiro para cpu_state (primeiro argumento) - aponta para edi
+    push esp                    ; Envia ponteiro da pilha (cpu_state_t)
     call interrupt_handler
-    add esp, 12                 ; remove os 3 argumentos
+    mov esp, eax                ; <--- TROCA DE CONTEXTO AQUI
 
-    popa                        ; restaura registradores
-    add esp, 8                  ; remove número da interrupção e código de erro
+    pop gs
+    pop fs
+    pop es
+    pop ds
+    popa
+    add esp, 8
     iret
-
 ; load_idt - Carrega a IDT
 ; C prototype: void load_idt(unsigned int idt_ptr_addr);
 load_idt:

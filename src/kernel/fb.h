@@ -40,4 +40,8 @@ void fb_set_cursor(unsigned short pos);
 /** fb_delete_char – apaga o caractere anterior ao cursor */
 void fb_delete_char(void);
 
+/** Navegação de Scroll (Setas do Teclado) */
+void fb_scroll_up(void);
+void fb_scroll_down(void);
+
 #endif

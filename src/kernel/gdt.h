@@ -1,9 +1,7 @@
 // gdt.h - Estruturas para a Global Descriptor Table
 #ifndef GDT_H
 #define GDT_H
-
-#include <stdint.h>
-
+#include "multiboot.h"
 struct tss_entry_struct
 {
     uint32_t prev_tss;

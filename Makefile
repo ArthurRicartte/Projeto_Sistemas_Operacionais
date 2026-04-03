@@ -13,7 +13,7 @@ LDFLAGS = -T config/linker.ld -m elf_i386
 
 # Arquivos objeto do kernel (restore_context.o REMOVIDO)
 LOADER_OBJ = loader.o
-KERNEL_OBJS = kmain.o fb.o serial.o io.o gdt_c.o gdt_s.o idt.o pic.o interrupts.o pmm.o kheap.o process.o pit.o
+KERNEL_OBJS = kmain.o fb.o serial.o io.o gdt_c.o gdt_s.o idt.o pic.o interrupts.o pmm.o kheap.o process.o scheduler.o pit.o
 OBJECTS = $(LOADER_OBJ) $(KERNEL_OBJS)
 
 # Alvo padrão
@@ -59,6 +59,9 @@ kheap.o: src/kernel/kheap.c src/kernel/kheap.h src/kernel/pmm.h
 
 process.o: src/kernel/process.c src/kernel/process.h src/kernel/string.h src/kernel/pmm.h src/kernel/kheap.h
 	$(CC) $(CFLAGS) src/kernel/process.c -o process.o
+
+scheduler.o: src/kernel/scheduler.c src/kernel/scheduler.h src/kernel/process.h src/kernel/fb.h src/kernel/string.h
+	$(CC) $(CFLAGS) src/kernel/scheduler.c -o scheduler.o
 
 pit.o: src/kernel/pit.c src/kernel/pit.h src/kernel/io.h src/kernel/process.h
 	$(CC) $(CFLAGS) src/kernel/pit.c -o pit.o

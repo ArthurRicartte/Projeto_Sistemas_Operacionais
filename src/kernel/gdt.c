@@ -1,5 +1,5 @@
 #include "gdt.h"
-#include <stdint.h> // Para uint32_t, uint16_t, etc.
+#include "multiboot.h" // Para uint32_t, uint16_t, etc.
 
 // O nosso array agora com 6 segmentos:
 // 0:Nulo, 1:KCode, 2:KData, 3:UCode, 4:UData, 5:TSS

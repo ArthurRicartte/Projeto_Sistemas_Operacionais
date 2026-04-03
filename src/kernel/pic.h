@@ -1,6 +1,6 @@
 #ifndef PIC_H
 #define PIC_H
-#include <stdint.h>
+#include "multiboot.h"
 
 void init_pic(void);
 void pic_acknowledge(unsigned int interrupt);

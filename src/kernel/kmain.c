@@ -9,6 +9,7 @@
 #include "kheap.h"
 #include "string.h"
 #include "pit.h"
+#include "scheduler.h"
 
 #define KERNEL_VIRTUAL_BASE 0xC0000000
 
@@ -43,33 +44,30 @@ static void write_hex(unsigned int num)
 void kmain(unsigned int ebx)
 {
     // 1. Inicialização Base de Hardware
-    init_gdt();
     fb_clear();
     serial_configure(SERIAL_COM1);
-
-    fb_write("GDT Inicializada!\n", 18);
-    fb_write("Kernel em Modo Protegido (Ring 0) ativo.\n", 41);
+    fb_write("[Unidade 4] Framebuffer e porta Serial inicializados.\n", 54);
     serial_write(SERIAL_COM1, "Kernel Booting...\n", 18);
+
+    init_gdt();
+    fb_write("[Unidade 5] GDT inicializada. Kernel em Ring 0.\n", 48);
 
     // 2. Inicialização de Interrupções
     init_idt();
     init_pic();
-    fb_write("IDT e PIC configurados.\n", 24);
+    fb_write("[Unidade 6] IDT e PIC configurados (Interrupcoes).\n", 51);
 
     // 3. Memória e Higher Half
     // O ponteiro ebx vem como endereço físico, precisamos do virtual
     multiboot_info_t *mbinfo_virt = (multiboot_info_t *)(ebx + KERNEL_VIRTUAL_BASE);
 
-    fb_write("\n[Unidade 9/10] Verificando Memoria...\n", 38);
-    fb_write("\nEndereco de kmain (Virtual): ", 29);
-    write_hex((unsigned int)kmain);
-    fb_write("\n", 1);
+    fb_write("[Unidade 9/10] Memoria e Higher Half inicializados.\n", 52);
 
     pmm_init(mbinfo_virt, (uint32_t)&kernel_physical_start, (uint32_t)&kernel_physical_end);
-    fb_write("PMM e Heap inicializados.\n", 26);
+    fb_write("[Unidade 10] PMM e Kernel Heap alocados.\n", 41);
 
     // 4. Preparação de Processos via Multiboot (Unidade 14)
-    fb_write("\n[Unidade 14] Carregando modulos como processos...\n", 51);
+    fb_write("[Unidade 14] Carregando modulos do GRUB...\n", 43);
 
     if (mbinfo_virt->flags & MULTIBOOT_INFO_MODS)
     {
@@ -86,8 +84,8 @@ void kmain(unsigned int ebx)
                 fb_write(" em: ", 5);
                 write_hex(prog_start);
                 fb_write("\n", 1);
-
-                create_process(prog_start, "external_prog");
+                uint32_t simulated_burst = 50 - (i * 10);
+                create_process(prog_start, "external_prog", simulated_burst);
             }
         }
         else
@@ -102,8 +100,8 @@ void kmain(unsigned int ebx)
 
     // 5. Configuração do Escalonador Preemptivo
     // Frequência de 20Hz (Troca a cada 50ms aprox.)
-    init_preemptive_scheduler(20);
-    fb_write("Escalonador Round Robin (PIT) ativo.\n", 37);
+    init_preemptive_scheduler(20, SCHED_FCFS);
+    fb_write("[Unidade 14] Escalonador Preemptivo (FCFS) ativado.\n", 52);
 
     // 6. Salto para Ring 3 (Modo Usuário)
     current_process = ready_queue;
@@ -115,8 +113,10 @@ void kmain(unsigned int ebx)
         tss.esp0 = (uint32_t)current_process->esp & 0xFFFFF000;
         tss.esp0 += 4096;
 
-        fb_write("\n*** Saltando para Ring 3 (User Mode) ***\n", 41);
-        sleep(5000000); // Breve pausa para o usuário ler as mensagens
+        fb_write("[Kernel  ] Saltando para User Mode (Ring 3)...\n", 47);
+        fb_write(" -> Executando PID 1\n", 21);
+        serial_write(SERIAL_COM1, " -> Executando PID 1\n", 21);
+        sleep(2000000); // Breve pausa para o usuário ler as mensagens
 
         // 7. DISPARO DO CONTEXTO INICIAL
         __asm__ volatile(

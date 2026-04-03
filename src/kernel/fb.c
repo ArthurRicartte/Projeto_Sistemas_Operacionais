@@ -23,60 +23,90 @@ static char *fb = (char *)0xB8000;
 // Armazena a posicao atual do cursor:
 static unsigned short cursor_pos = 0;
 
-// Escreve um caractere em uma posicao especifica, com as cores especificadas na posicao i do framebuffer
-void fb_write_cell(unsigned int i, char c, unsigned char fg, unsigned char bg)
+// Buffer de Scrollback (200 linhas de 80 colunas)
+#define FB_BUFFER_LINES 200
+static unsigned short fb_buffer[FB_BUFFER_LINES * FB_WIDTH];
+static int scroll_offset = 0; // Quantas linhas para cima estamos olhando (0 = final)
+
+// Inicializa o buffer com espaços em branco
+static void fb_init_buffer(void)
 {
-    // Cada caractere ocupa 2 bytes: o primeiro para o caractere e o segundo para as cores (4 bytes no total)
-    fb[2 * i] = c;
-    fb[2 * i + 1] = ((fg & 0x0F) << 4) | (bg & 0x0F);
-    // 0x0F é uma mascara para garantir que apenas os 4 bits mais baixos sejam usados
+    for (int i = 0; i < FB_BUFFER_LINES * FB_WIDTH; i++)
+    {
+        fb_buffer[i] = (unsigned short)(( (FB_WHITE & 0x0F) << 12) | ( (FB_BLACK & 0x0F) << 8) | ' ');
+    }
 }
 
-// Move o cursor para a posicao especificada (0 a 1999)
+// Atualiza a tela de vídeo (0xB8000) a partir do buffer interno
+static void fb_refresh(void)
+{
+    // A janela de exibição (25 linhas) termina em (cursor_pos / 80)
+    // Mas se estivermos com scroll_offset > 0, subimos essa janela.
+    
+    int current_line = cursor_pos / FB_WIDTH;
+    int start_line = current_line - FB_HEIGHT + 1 - scroll_offset;
+    
+    if (start_line < 0) start_line = 0;
+
+    for (int row = 0; row < FB_HEIGHT; row++)
+    {
+        for (int col = 0; col < FB_WIDTH; col++)
+        {
+            int buf_idx = (start_line + row) * FB_WIDTH + col;
+            int screen_idx = row * FB_WIDTH + col;
+            
+            unsigned short val = fb_buffer[buf_idx];
+            fb[2 * screen_idx] = (char)(val & 0xFF);
+            fb[2 * screen_idx + 1] = (char)((val >> 8) & 0xFF);
+        }
+    }
+    
+    // Posiciona o cursor de hardware (apenas se estivermos na tela certa)
+    if (scroll_offset == 0) {
+        fb_move_cursor(cursor_pos % (FB_WIDTH * FB_HEIGHT)); 
+    } else {
+        fb_move_cursor(2000); // Esconde o cursor fora da tela
+    }
+}
+
+// Escreve um caractere em uma posicao especifica no buffer apenas
+void fb_write_cell(unsigned int i, char c, unsigned char fg, unsigned char bg)
+{
+    if (i >= FB_BUFFER_LINES * FB_WIDTH) return;
+    fb_buffer[i] = (unsigned short)(( (fg & 0x0F) << 12) | ( (bg & 0x0F) << 8) | (unsigned char)c);
+}
+
+// Move o cursor para a posicao especificada (0 a 1999) - Apenas hardware
 void fb_move_cursor(unsigned short pos)
 {
-    /*A posicao eh de 16 bits mas as portas so transferem 8 bits
-    Sendo necessario fazer duas escritas para transferir a posicao completa*/
-
-    // Seleciona o byte alto
     outb(FB_COMMAND_PORT, FB_HIGH_BYTE_CMD);
-
-    // Envia o byte alto da posicao para a porta de dados
     outb(FB_DATA_PORT, (pos >> 8) & 0xFF);
-
-    // Seleciona o byte baixo
     outb(FB_COMMAND_PORT, FB_LOW_BYTE_CMD);
-
-    // Envia o byte baixo da posicao para a porta de dados
     outb(FB_DATA_PORT, pos & 0xFF);
 }
 
-// Rola a tela para cima quando o cursor chega no final
+// Rola o buffer se necessário (Simplificado: apenas avança o cursor no buffer)
 static void fb_scroll(void)
 {
-    int i, j;
-    for (i = 1; i < FB_HEIGHT; i++)
+    // Se o cursor estourar o buffer, limpamos a metade superior e subimos tudo
+    if (cursor_pos >= FB_BUFFER_LINES * FB_WIDTH)
     {
-        for (j = 0; j < FB_WIDTH; j++)
-        {
-            unsigned int src = i * FB_WIDTH + j;
-            unsigned int dest = (i - 1) * FB_WIDTH + j;
-            fb[2 * dest] = fb[2 * src];
-            fb[2 * dest + 1] = fb[2 * src + 1];
+        int mid = (FB_BUFFER_LINES / 2) * FB_WIDTH;
+        for (int i = 0; i < mid; i++) {
+            fb_buffer[i] = fb_buffer[i + mid];
         }
+        for (int i = mid; i < FB_BUFFER_LINES * FB_WIDTH; i++) {
+            fb_buffer[i] = (unsigned short)(( (FB_WHITE & 0x0F) << 12) | ( (FB_BLACK & 0x0F) << 8) | ' ');
+        }
+        cursor_pos -= mid;
     }
-    for (j = 0; j < FB_WIDTH; j++)
-    {
-        unsigned int last = (FB_HEIGHT - 1) * FB_WIDTH + j;
-        fb[2 * last] = ' ';
-        fb[2 * last + 1] = (FB_WHITE << 4) | FB_BLACK;
-    }
-    // Ajusta o cursor para o início da última linha após o scroll
-    cursor_pos = (FB_HEIGHT - 1) * FB_WIDTH;
 }
 
 int fb_write(char *buf, unsigned int len)
 {
+    static int initialized = 0;
+    if (!initialized) { fb_init_buffer(); initialized = 1; }
+
     for (unsigned int i = 0; i < len; i++)
     {
         char c = buf[i];
@@ -90,47 +120,57 @@ int fb_write(char *buf, unsigned int len)
             cursor_pos++;
         }
 
-        // Verifica se precisa rolar a tela (pode precisar rolar múltiplas vezes)
-        while (cursor_pos >= FB_WIDTH * FB_HEIGHT)
-        {
-            fb_scroll();
-        }
-
-        fb_move_cursor(cursor_pos);
+        fb_scroll();
     }
+    
+    // Sempre que escrevemos, resetamos o scroll para o fim e redesenhamos
+    scroll_offset = 0;
+    fb_refresh();
     return len;
 }
 
 void fb_clear(void)
 {
-    for (int i = 0; i < FB_WIDTH * FB_HEIGHT; i++)
-    {
-        fb_write_cell(i, ' ', FB_WHITE, FB_BLACK);
-    }
+    fb_init_buffer();
     cursor_pos = 0;
-    fb_move_cursor(0);
+    scroll_offset = 0;
+    fb_refresh();
 }
 
-// Retorna a posicao atual do cursor
 unsigned short fb_get_cursor(void)
 {
     return cursor_pos;
 }
 
-// Define a posicao do cursor
 void fb_set_cursor(unsigned short pos)
 {
     cursor_pos = pos;
-    fb_move_cursor(pos);
+    fb_refresh();
 }
 
-// Deleta o caractere anterior ao cursor (backspace)
 void fb_delete_char(void)
 {
     if (cursor_pos > 0)
     {
         cursor_pos--;
         fb_write_cell(cursor_pos, ' ', FB_WHITE, FB_BLACK);
-        fb_move_cursor(cursor_pos);
+        fb_refresh();
+    }
+}
+
+void fb_scroll_up(void)
+{
+    int current_line = cursor_pos / FB_WIDTH;
+    if (current_line > FB_HEIGHT + scroll_offset) {
+        scroll_offset++;
+        fb_refresh();
+    }
+}
+
+void fb_scroll_down(void)
+{
+    if (scroll_offset > 0) {
+        scroll_offset--;
+        fb_refresh();
     }
 }

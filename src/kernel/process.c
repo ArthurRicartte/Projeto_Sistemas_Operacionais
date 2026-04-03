@@ -4,6 +4,7 @@
 #include "string.h"
 #include "pit.h"
 #include "gdt.h"
+#include "fb.h"
 
 process_t *current_process = (void *)0;
 process_t *ready_queue = (void *)0;
@@ -11,7 +12,7 @@ static uint32_t next_pid = 1;
 extern uint32_t timer_ticks;
 extern tss_entry_t tss;
 
-void create_process(uint32_t entry_point, char *name)
+void create_process(uint32_t entry_point, char *name, uint32_t burst_time)
 {
     process_t *proc = (process_t *)kmalloc(sizeof(process_t));
     uint32_t stack_phys = (uint32_t)pmm_alloc_page();
@@ -42,7 +43,13 @@ void create_process(uint32_t entry_point, char *name)
     proc->pid = next_pid++;
     proc->state = PROCESS_READY;
     proc->arrival_time = timer_ticks;
-    proc->burst_time = 0;
+    proc->burst_time = burst_time;
+    proc->total_exec_time = 0;
+    proc->turnaround_time = 0;
+    proc->waiting_time = 0;
+
+    extern int total_processes;
+    total_processes++;
 
     int i;
     for (i = 0; i < 31 && name[i] != '\0'; i++)

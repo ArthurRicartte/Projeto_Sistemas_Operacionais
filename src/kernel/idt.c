@@ -1,6 +1,25 @@
 #include "idt.h"
 #include "process.h"
 #include "pic.h"
+#include "io.h"
+#include "fb.h"
+#include "serial.h"
+#include "pit.h"
+
+// Mapeamento simples de scan code para ASCII (apenas teclas pressionadas, US)
+static char scan_code_to_ascii(unsigned char scancode)
+{
+    if (scancode & 0x80)
+        return 0; // liberação de tecla ignorada
+    static char map[] = {
+        0, 0, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0, 0,
+        'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n', 0,
+        'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 0, '\\',
+        'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, '*', 0, ' '};
+    if (scancode < sizeof(map))
+        return map[scancode];
+    return 0;
+}
 
 // Estruturas internas
 idt_entry_t idt[256];
@@ -44,11 +63,40 @@ uint32_t interrupt_handler(cpu_state_t *cpu)
     // 2. Trata Timer ou Yield
     if (cpu->int_no == 32)
     {
-        pic_acknowledge(32);
-        schedule_preemptive();
+        timer_handler();
     }
     else if (cpu->int_no >= 32 && cpu->int_no <= 47)
     {
+        if (cpu->int_no == 33)
+        {
+            unsigned char scancode = inb(0x60);
+            if (scancode == 0x0E) // backspace pressionado
+            {
+                fb_delete_char();
+                serial_write(SERIAL_COM1, "\b", 1);
+            }
+            else if (!(scancode & 0x80)) // apenas tecla pressionada
+            {
+                if (scancode == 0x48) // Seta para Cima
+                {
+                    fb_scroll_up();
+                }
+                else if (scancode == 0x50) // Seta para Baixo
+                {
+                    fb_scroll_down();
+                }
+                else
+                {
+                    char ascii = scan_code_to_ascii(scancode);
+                    if (ascii)
+                    {
+                        char str[2] = {ascii, '\0'};
+                        fb_write(str, 1);
+                        serial_write(SERIAL_COM1, str, 1);
+                    }
+                }
+            }
+        }
         pic_acknowledge(cpu->int_no);
     }
 

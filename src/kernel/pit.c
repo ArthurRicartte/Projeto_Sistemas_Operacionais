@@ -4,6 +4,8 @@
 #include "process.h"
 #include "pic.h"
 
+#include "scheduler.h"
+
 #define PIT_COMMAND_PORT 0x43
 #define PIT_CHANNEL0_DATA 0x40
 
@@ -18,13 +20,14 @@ void timer_handler(void)
     // 32 é o número da interrupção mapeada para o IRQ0
     pic_acknowledge(32);
 
-    // Chama o escalonador para trocar de processo
-    schedule_preemptive();
+    // Chama o escalonador avançado para trocar de processo
+    advanced_schedule();
 }
 
 // Função que configura o PIT e ativa o escalonamento
-void init_preemptive_scheduler(uint32_t frequency)
+void init_preemptive_scheduler(uint32_t frequency, int algorithm)
 {
+    current_algorithm = algorithm;
     // O divisor para o PIT (1.193182 MHz / frequência desejada)
     uint32_t divisor = 1193180 / frequency;
 

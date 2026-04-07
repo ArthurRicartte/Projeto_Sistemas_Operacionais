@@ -7,4 +7,13 @@ Arthur Ricartte Pereira de Souza,
 João Veloso Da Cruz Gouveia Segundo,
 Pedro Benicio Lacet Da Silva,
 Marquison De Sousa e Silva Junior.
+
+Ferramentas Utilizadas:
+Ubuntu Linux, QEMU, GRUB-MKRESCUE
+
+Depuração:
+GDB
+
+Compilação:
+GCC, NASM, LD, MAKE
 # save-SO

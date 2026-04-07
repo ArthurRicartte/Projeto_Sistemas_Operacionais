@@ -1,124 +1,92 @@
-// Nucleo do Sistema Operacional
-
+#include "process.h"
+#include "idt.h"
 #include "fb.h"
 #include "serial.h"
-#include "gdt.h"       // Adicionado para o Capítulo 5
-#include "idt.h"       //Adicionado para o Capítulo 6
-#include "pic.h"       //Adicionado para o Capítulo 6
-#include "multiboot.h" // NOVO: Para o Capítulo 7
+#include "gdt.h"
+#include "pic.h"
+#include "multiboot.h"
+#include "pmm.h"
+#include "kheap.h"
+#include "string.h"
+#include "pit.h"
+#include "scheduler.h"
+
+#define KERNEL_VIRTUAL_BASE 0xC0000000
+
+/* Labels exportados pelo linker script */
+extern uint32_t kernel_physical_start;
+extern uint32_t kernel_physical_end;
+extern tss_entry_t tss;
 
 // Função de delay simples (busy wait)
-// Quanto maior o valor, maior a pausa.
 static void sleep(unsigned int timer)
 {
     for (volatile unsigned int i = 0; i < timer; i++)
-    {
-        // O loop vazio, mas "volatile" impede que o compilador otimize
-    }
+        ;
 }
 
-// NOVO: Função auxiliar para converter números para hexadecimal
+// Função auxiliar para converter números para hexadecimal
 static void write_hex(unsigned int num)
 {
     char hex_chars[] = "0123456789ABCDEF";
-    char buffer[11]; // "0xFFFFFFFF" + '\0'
-
+    char buffer[11];
     buffer[0] = '0';
     buffer[1] = 'x';
     buffer[10] = '\0';
-
     for (int i = 0; i < 8; i++)
     {
         unsigned char nibble = (num >> (28 - i * 4)) & 0xF;
         buffer[2 + i] = hex_chars[nibble];
     }
-
     fb_write(buffer, 10);
 }
 
-// FUNÇÃO PRINCIPAL MODIFICADA - AGORA RECEBE EBX
-void kmain(unsigned int ebx) // <--- MUDANÇA: parâmetro adicionado
+void kmain(unsigned int ebx)
 {
-    // Inicializa a GDT antes de qualquer outra coisa
-    init_gdt();
-
-    // Inicializa o framebuffer
+    // Inicialização Base de Hardware
     fb_clear();
-
-    // Inicializa a porta serial COM1
     serial_configure(SERIAL_COM1);
+    fb_write("Framebuffer e porta Serial inicializados.\n", 54);
+    serial_write(SERIAL_COM1, "Kernel Booting...\n", 18);
 
-    // Escreve mensagens no framebuffer
-    fb_write("GDT Inicializada!\n", 18);
-    fb_write("Kernel em Modo Protegido Funcionando!\n", 37);
-    sleep(10000000);
+    init_gdt();
+    fb_write("GDT inicializada. Kernel em Ring 0.\n", 48);
 
-    fb_write("Driver de framebuffer ativo.\n", 30);
-    sleep(10000000);
+    // Inicialização de Interrupções
+    init_idt();
+    init_pic();
+    fb_write("IDT e PIC configurados (Interrupcoes).\n", 51);
 
-    fb_write("Testando rolagem...\n", 20);
-    sleep(10000000);
+    // Memória e Higher Half
+    // O ponteiro ebx vem como endereço físico, precisamos do virtual
+    multiboot_info_t *mbinfo_virt = (multiboot_info_t *)(ebx + KERNEL_VIRTUAL_BASE);
 
-    // Força rolagem (escreve 30 linhas)
-    for (int i = 0; i < 30; i++)
+    fb_write("Memoria e Higher Half inicializados.\n", 52);
+
+    pmm_init(mbinfo_virt, (uint32_t)&kernel_physical_start, (uint32_t)&kernel_physical_end);
+    fb_write("PMM e Kernel Heap alocados.\n", 41);
+
+    // Preparação de Processos via Multiboot (Unidade 14)
+    fb_write("[Unidade 14] Carregando modulos do GRUB...\n", 43);
+
+    if (mbinfo_virt->flags & MULTIBOOT_INFO_MODS)
     {
-        fb_write("Linha de teste para rolagem.\n", 29);
-        sleep(5000000); // pausa menor entre linhas para ver a rolagem
-    }
-
-    // Escreve na porta serial (sera capturada no arquivo com1.out)
-    serial_write(SERIAL_COM1, "Hello from serial port!\n", 24);
-    serial_write(SERIAL_COM1, "Isso vai para o arquivo com1.out\n", 34);
-
-    // Inicializa a IDT e o PIC
-    fb_write("Inicializando IDT...\n", 21);
-    init_idt(); // inicializa tabela de interrupcoes
-
-    fb_write("Configurando PIC...\n", 20);
-    init_pic(); //  configura o controlador de interrupcoes
-
-    fb_write("Habilitando interrupcoes...\n", 28);
-    __asm__ volatile("sti"); // habilita interrupcoes na CPU
-
-    fb_write("Interrupcoes habilitadas. Digite algo no teclado...\n", 52);
-
-    // NOVO: Código do Capítulo 7 - Carregar e executar módulo
-    fb_write("\n[Capitulo 7] Procurando modulos do GRUB...\n", 41);
-
-    // Converter ebx para a estrutura multiboot
-    multiboot_info_t *mbinfo = (multiboot_info_t *)ebx;
-
-    // Verificar se módulos foram carregados (bit 3 das flags)
-    if (mbinfo->flags & MULTIBOOT_INFO_MODS)
-    {
-        fb_write("\nModulos detectados! Flags ok.\n", 30);
-
-        if (mbinfo->mods_count > 0)
+        if (mbinfo_virt->mods_count > 0)
         {
-            fb_write("\nNumero de modulos: ", 19);
+            multiboot_module_t *mods = (multiboot_module_t *)(mbinfo_virt->mods_addr + KERNEL_VIRTUAL_BASE);
 
-            // Mostrar contagem (convertendo para caractere)
-            char count_str[2];
-            count_str[0] = '0' + mbinfo->mods_count;
-            count_str[1] = '\n';
-            fb_write(count_str, 2);
+            for (uint32_t i = 0; i < mbinfo_virt->mods_count; i++)
+            {
+                uint32_t prog_start = mods[i].mod_start + KERNEL_VIRTUAL_BASE;
 
-            // Pegar endereço do primeiro módulo
-            multiboot_module_t *mod = (multiboot_module_t *)mbinfo->mods_addr;
-            unsigned int module_address = mod->mod_start;
-
-            fb_write("Endereco do modulo: ", 20);
-            write_hex(module_address);
-            fb_write("\n", 1);
-
-            fb_write("Executando modulo...\n", 21);
-
-            // Executar o módulo
-            void (*program)(void) = (void (*)(void))module_address;
-            program();
-
-            // Se chegar aqui, o módulo retornou (não deveria)
-            fb_write("ERRO: Modulo retornou!\n", 22);
+                fb_write("Modulo ", 7);
+                write_hex(i);
+                fb_write(" em: ", 5);
+                write_hex(prog_start);
+                fb_write("\n", 1);
+                uint32_t simulated_burst = 50 - (i * 10);
+                create_process(prog_start, "external_prog", simulated_burst);
+            }
         }
         else
         {
@@ -127,15 +95,46 @@ void kmain(unsigned int ebx) // <--- MUDANÇA: parâmetro adicionado
     }
     else
     {
-        fb_write("ERRO: Nenhum modulo carregado!\n", 30);
-        fb_write("Verifique menu.lst e pasta modules/\n", 36);
+        fb_write("ERRO: Nenhum modulo Multiboot detectado!\n", 41);
     }
 
-    fb_write("Fim do Capitulo 7. Loop infinito...\n", 36);
+    // Configuração do Escalonador Preemptivo
+    // Frequência de 20Hz (Troca a cada 50ms aprox.)
+    init_preemptive_scheduler(20, SCHED_FCFS);
+    fb_write("[Unidade 14] Escalonador Preemptivo (FCFS) ativado.\n", 52);
 
-    // Loop infinito original (preservado)
+    // Salto para Ring 3 (Modo Usuário)
+    current_process = ready_queue;
+    if (current_process != (void *)0)
+    {
+        current_process->state = PROCESS_RUNNING;
+
+        // Atualiza a TSS antes do primeiro salto
+        tss.esp0 = (uint32_t)current_process->esp & 0xFFFFF000;
+        tss.esp0 += 4096;
+
+        fb_write("[Kernel] Saltando para User Mode (Ring 3)...\n", 47);
+        fb_write(" -> Executando PID 1\n", 21);
+        serial_write(SERIAL_COM1, " -> Executando PID 1\n", 21);
+        sleep(2000000); // Breve pausa para o usuário ler as mensagens
+
+        // DISPARO DO CONTEXTO INICIAL
+        __asm__ volatile(
+            "mov %0, %%esp\n"
+            "pop %%gs\n"
+            "pop %%fs\n"
+            "pop %%es\n"
+            "pop %%ds\n"
+            "popa\n"
+            "add $8, %%esp\n"
+            "iret\n"
+            : : "r"(current_process->esp));
+    }
+
+    // Caso não existam processos, o Kernel entra em repouso
+    fb_write("Aviso: Fila de prontos vazia. Kernel em HLT.\n", 45);
     while (1)
     {
-        __asm__ volatile("hlt"); // Halt instruction to save power
+        __asm__ volatile("hlt");
     }
 }

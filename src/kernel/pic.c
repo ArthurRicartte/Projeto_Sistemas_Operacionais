@@ -50,3 +50,21 @@ void pic_acknowledge(unsigned int interrupt)
         outb(PIC1_COMMAND, PIC_EOI); // reconhece também no master por causa do cascade
     }
 }
+
+void pic_clear_mask(uint8_t irq)
+{
+    uint16_t port;
+    uint8_t value;
+
+    if (irq < 8)
+    {
+        port = 0x21; // PIC Mestre
+    }
+    else
+    {
+        port = 0xA1; // PIC Escravo
+        irq -= 8;
+    }
+    value = inb(port) & ~(1 << irq);
+    outb(port, value);
+}

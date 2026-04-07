@@ -1,24 +1,34 @@
-/* Desenvolvido por: Arthur Ricartte e Joao Veloso */
-/* Ponto de entrada do kernel */
 ENTRY(loader)
-
-/* Formato 32 bits */
 OUTPUT_FORMAT(elf32-i386)
 
 SECTIONS
 {
-    /* O kernel é carregado em 0x1000 (1KB) */
-    . = 0x00100000;
+    . = 0xC0100000;
 
-    .text : {
+    kernel_virtual_start = .;
+    kernel_physical_start = . - 0xC0000000;
+
+    .text ALIGN(0x1000) : AT(ADDR(.text) - 0xC0000000)
+    {
         *(.text)
     }
 
-    .data : {
+    .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - 0xC0000000)
+    {
+        *(.rodata*)
+    }
+
+    .data ALIGN(0x1000) : AT(ADDR(.data) - 0xC0000000)
+    {
         *(.data)
     }
 
-    .bss : {
+    .bss ALIGN(0x1000) : AT(ADDR(.bss) - 0xC0000000)
+    {
+        *(COMMON)
         *(.bss)
     }
+
+    kernel_virtual_end = .;
+    kernel_physical_end = . - 0xC0000000;
 }

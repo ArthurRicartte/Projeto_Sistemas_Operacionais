@@ -24,11 +24,11 @@ typedef struct process
     uint32_t pid;
     uint32_t state;
 
-    // Campos para Parte 3 (Estatísticas e Algoritmos)
+    //(Estatísticas e Algoritmos)
     uint32_t arrival_time;    // Momento da criação
     uint32_t burst_time;      // Tempo estimado de execução (SJF)
     uint32_t total_exec_time; // Quanto tempo já rodou
-    
+
     // Estatisticas finais
     uint32_t waiting_time;
     uint32_t turnaround_time;

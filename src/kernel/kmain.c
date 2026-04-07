@@ -43,30 +43,30 @@ static void write_hex(unsigned int num)
 
 void kmain(unsigned int ebx)
 {
-    // 1. Inicialização Base de Hardware
+    // Inicialização Base de Hardware
     fb_clear();
     serial_configure(SERIAL_COM1);
-    fb_write("[Unidade 4] Framebuffer e porta Serial inicializados.\n", 54);
+    fb_write("Framebuffer e porta Serial inicializados.\n", 54);
     serial_write(SERIAL_COM1, "Kernel Booting...\n", 18);
 
     init_gdt();
-    fb_write("[Unidade 5] GDT inicializada. Kernel em Ring 0.\n", 48);
+    fb_write("GDT inicializada. Kernel em Ring 0.\n", 48);
 
-    // 2. Inicialização de Interrupções
+    // Inicialização de Interrupções
     init_idt();
     init_pic();
-    fb_write("[Unidade 6] IDT e PIC configurados (Interrupcoes).\n", 51);
+    fb_write("IDT e PIC configurados (Interrupcoes).\n", 51);
 
-    // 3. Memória e Higher Half
+    // Memória e Higher Half
     // O ponteiro ebx vem como endereço físico, precisamos do virtual
     multiboot_info_t *mbinfo_virt = (multiboot_info_t *)(ebx + KERNEL_VIRTUAL_BASE);
 
-    fb_write("[Unidade 9/10] Memoria e Higher Half inicializados.\n", 52);
+    fb_write("Memoria e Higher Half inicializados.\n", 52);
 
     pmm_init(mbinfo_virt, (uint32_t)&kernel_physical_start, (uint32_t)&kernel_physical_end);
-    fb_write("[Unidade 10] PMM e Kernel Heap alocados.\n", 41);
+    fb_write("PMM e Kernel Heap alocados.\n", 41);
 
-    // 4. Preparação de Processos via Multiboot (Unidade 14)
+    // Preparação de Processos via Multiboot (Unidade 14)
     fb_write("[Unidade 14] Carregando modulos do GRUB...\n", 43);
 
     if (mbinfo_virt->flags & MULTIBOOT_INFO_MODS)
@@ -98,12 +98,12 @@ void kmain(unsigned int ebx)
         fb_write("ERRO: Nenhum modulo Multiboot detectado!\n", 41);
     }
 
-    // 5. Configuração do Escalonador Preemptivo
+    // Configuração do Escalonador Preemptivo
     // Frequência de 20Hz (Troca a cada 50ms aprox.)
     init_preemptive_scheduler(20, SCHED_FCFS);
     fb_write("[Unidade 14] Escalonador Preemptivo (FCFS) ativado.\n", 52);
 
-    // 6. Salto para Ring 3 (Modo Usuário)
+    // Salto para Ring 3 (Modo Usuário)
     current_process = ready_queue;
     if (current_process != (void *)0)
     {
@@ -113,12 +113,12 @@ void kmain(unsigned int ebx)
         tss.esp0 = (uint32_t)current_process->esp & 0xFFFFF000;
         tss.esp0 += 4096;
 
-        fb_write("[Kernel  ] Saltando para User Mode (Ring 3)...\n", 47);
+        fb_write("[Kernel] Saltando para User Mode (Ring 3)...\n", 47);
         fb_write(" -> Executando PID 1\n", 21);
         serial_write(SERIAL_COM1, " -> Executando PID 1\n", 21);
         sleep(2000000); // Breve pausa para o usuário ler as mensagens
 
-        // 7. DISPARO DO CONTEXTO INICIAL
+        // DISPARO DO CONTEXTO INICIAL
         __asm__ volatile(
             "mov %0, %%esp\n"
             "pop %%gs\n"

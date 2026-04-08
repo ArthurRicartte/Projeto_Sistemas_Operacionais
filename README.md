@@ -1,7 +1,7 @@
 # Projeto-Sistemas-Operacionais
 
-Projeto que visa a implementação de um Sistema Operacional básico, segundo as instruções do repositório:
-https://littleosbook.github.io/](https://littleosbook.github.io/
+Tem como objetivo implementar um Sistema Operacional básico, seguindo as instruções do repositório:
+https://littleosbook.github.io/
 
 ---
 
